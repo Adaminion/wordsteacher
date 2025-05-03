@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.adaminion.vocabcoach"
-    compileSdk = 34  // Use specific version
+    compileSdk = 35 // Use specific version
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
