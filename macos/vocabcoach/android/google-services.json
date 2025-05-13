@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "479125264130",
+    "project_id": "vocabcoach-49dbd",
+    "storage_bucket": "vocabcoach-49dbd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479125264130:android:a306d49ba26a40c893d41b",
+        "android_client_info": {
+          "package_name": "com.adaminion.vocabcoach"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCl64Qe7Qp8lbhTh0XyvLzHTfyZ283PgbM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
