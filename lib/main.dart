@@ -1,5 +1,3 @@
-//import 'dart:typed_data';
-//import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'study_screen.dart';
@@ -521,11 +519,12 @@ void _showContactForm() {
       child: Text("Manage Online Files"),
     ),
     ElevatedButton(
-      onPressed: () {
-        updateStatus('Idle');
-      },
-      child: Text('Close'),
+      onPressed: null,
+    child: Text("Extra button"),
     ),
+    
+  
+
     ElevatedButton(
             onPressed: _showAboutPage,
             child: Text('Help/About'),

@@ -1,3 +1,4 @@
+import 'grade_screen.dart';
 import 'dart:io';
 import 'settings.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'feedback_generator.dart';
+
 
 enum StudyMode {
   test,   // Standard test with all questions 
@@ -37,6 +39,7 @@ class _StudyScreenState extends State<StudyScreen> {
   bool showFeedback = true;
   bool isCorrect = false;
   String lastUserAnswer = '';
+    List<Map<String, dynamic>> testResultsLog = [];
   final Map<String, String> diacriticMap = {
     // Polish
     'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 'ó': 'o', 
@@ -71,6 +74,12 @@ class _StudyScreenState extends State<StudyScreen> {
     if (activeEntries.isNotEmpty) {
       activeEntries.shuffle();
     }
+
+     if (widget.mode == StudyMode.test) {
+    testResultsLog.clear(); // Clear log for a new test session
+  }
+
+
   }
   
   Future<void> _loadPreferences() async {
@@ -114,33 +123,36 @@ class _StudyScreenState extends State<StudyScreen> {
     correctAnswer = correctAnswer.replaceAll(RegExp(r'[^\w\s]'), '');
   }
   
-  // Store the result in a class variable instead of returning
-  bool isCorrect = userAnswer == correctAnswer;
-  
-  // Now use isCorrect to update your UI or state
+  bool determinedIsCorrect = userAnswer == correctAnswer; // Renamed to avoid conflict
+
   setState(() {
-        this.isCorrect = isCorrect;
-    lastUserAnswer = displayUserAnswer;
-      
-      // Show the correct answer in the input field
-      answerController.text = displayCorrectAnswer;
-      
-      if (showFeedback) {
-        feedback = isCorrect 
-          ? FeedbackGenerator.getPositiveFeedback() 
-          : FeedbackGenerator.getNegativeFeedback();
-      } else {
-        feedback = isCorrect ? "Correct" : "Incorrect";
-      }
-      
-      if (isCorrect) {
-        correctAnswers++;
-      }
-      
-      // Store the user's original answer for display
-      lastUserAnswer = displayUserAnswer;
-    });
-  }
+    this.isCorrect = determinedIsCorrect; // Update state variable 'isCorrect'
+    lastUserAnswer = displayUserAnswer; 
+    answerController.text = displayCorrectAnswer; // Show correct answer in field
+
+    if (showFeedback) {
+      feedback = determinedIsCorrect 
+        ? FeedbackGenerator.getPositiveFeedback() 
+        : FeedbackGenerator.getNegativeFeedback();
+    } else {
+      feedback = determinedIsCorrect ? "Correct" : "Incorrect";
+    }
+
+    if (determinedIsCorrect) {
+      correctAnswers++;
+    }
+
+    // Log results for GradeScreen if in test mode
+    if (widget.mode == StudyMode.test) {
+      testResultsLog.add({
+        'question': activeEntries[currentIndex]['q'] ?? 'N/A', // Original question
+        'userAnswer': displayUserAnswer,                    // User's typed answer
+        'correctAnswer': displayCorrectAnswer,              // Actual correct answer
+        'isCorrect': determinedIsCorrect,                   // Boolean status
+      });
+    }
+  });
+}
   
   void nextQuestion() {
     // Different behavior based on mode
@@ -188,53 +200,79 @@ class _StudyScreenState extends State<StudyScreen> {
       lastUserAnswer = ""; // Reset the user's last answer
     });
   }
+
+  void _resetTestState() {
+  setState(() {
+    currentIndex = 0;
+    correctAnswers = 0;
+    answerController.clear();
+    feedback = null;
+    isCorrect = false;
+    lastUserAnswer = '';
+
+    if (widget.mode == StudyMode.test) {
+      testResultsLog.clear(); // Important: clear the log
+    }
+
+    // Re-initialize questions from the original widget entries
+    activeEntries = List.from(widget.entries); 
+    if (activeEntries.isNotEmpty) {
+      activeEntries.shuffle();
+    }
+    // initialCount is typically set from widget.entries.length in initState
+    // If widget.entries can change, initialCount might need updating here too.
+    // For simplicity, assuming initialCount set in initState is sufficient for the session.
+    initialCount = activeEntries.length; 
+  });
+}
+
+
   
-  void showResults() {
-    // For Test mode: Show final score
+
+void showResults() {
+  // This function is called when a test (StudyMode.test) is complete.
+  // Ensure testResultsLog has been populated correctly.
+
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => GradeScreen(
+        good: correctAnswers,    // Number of correct answers
+        total: initialCount,     // Total number of questions
+        results: testResultsLog, // The detailed log of answers
+      ),
+    ),
+  ).then((_) {
+    // This block executes when GradeScreen is popped (e.g., its "Back to Main" button is pressed).
+    // Now, you can offer the user options: e.g., "Try Again" or "Done".
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Test Results'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('You answered $correctAnswers out of $initialCount questions correctly.'),
-            Text('Your score: ${(correctAnswers / initialCount * 100).toStringAsFixed(1)}%'),
-          ],
-        ),
+      barrierDismissible: false, // User must make a choice
+      builder: (ctxDialog) => AlertDialog( // Use a different context name e.g., ctxDialog
+        title: const Text("Test Finished"),
+        content: const Text("What would you like to do next?"),
         actions: [
           TextButton(
+            child: const Text("Try Again"),
             onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pop(); // Return to previous screen
+              Navigator.of(ctxDialog).pop(); // Pop this decision dialog
+              _resetTestState();           // Reset StudyScreen for another attempt
             },
-            child: const Text('Done'),
           ),
           TextButton(
+            child: const Text("Done"),
             onPressed: () {
-              Navigator.of(ctx).pop();
-              // Reset the test
-              setState(() {
-                currentIndex = 0;
-                correctAnswers = 0;
-                answerController.clear();
-                feedback = null;
-                isCorrect = false;
-                lastUserAnswer = ''; // Reset user's answer
-                
-                // Restore and shuffle questions
-                activeEntries = List.from(widget.entries);
-                activeEntries.shuffle();
-              });
+              Navigator.of(ctxDialog).pop();   // Pop this decision dialog
+              Navigator.of(context).pop(); // Pop StudyScreen itself to go to the previous screen
             },
-            child: const Text('Try Again'),
           ),
         ],
       ),
     );
-  }
-  
+  });
+}
+
+
  void showCompletionDialog() {
   // For Drill mode: Show completion message
   showDialog(

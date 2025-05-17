@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'test_screen.dart';
+import 'study_screen.dart';
 
 class GradeScreen extends StatelessWidget {
   final int good;

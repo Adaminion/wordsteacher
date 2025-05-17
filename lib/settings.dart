@@ -10,6 +10,9 @@ class Settings {
   bool repeatQuestions = true;
   bool invertAskingOrder = false;
   bool showFeedback = true;
+  String gradingSystem = 'A-F';
+  String uiLanguage = 'English';
+
 
   // Answer Matching Settings
   bool ignoreCaps = true;
@@ -51,6 +54,8 @@ class Settings {
     repeatQuestions = prefs.getBool('repeatQuestions') ?? true;
     invertAskingOrder = prefs.getBool('invertAskingOrder') ?? false;
     showFeedback = prefs.getBool('showFeedback') ?? true;
+    gradingSystem = prefs.getString('gradingSystem') ?? 'A-F';
+    uiLanguage = prefs.getString('uiLanguage') ?? 'English';
     
     // Answer Matching Settings
     ignoreCaps = prefs.getBool('ignoreCaps') ?? true;
@@ -70,8 +75,9 @@ class Settings {
     await prefs.setInt('numberOfQuestions', numberOfQuestions);
     await prefs.setBool('repeatQuestions', repeatQuestions);
     await prefs.setBool('invertAskingOrder', invertAskingOrder);
-    await prefs.setBool('showFeedback', showFeedback);
-    
+    await prefs.setBool('showFeedback', showFeedback);  
+    await prefs.setString('gradingSystem', gradingSystem);
+    await prefs.setString('uiLanguage', uiLanguage);
     // Answer Matching Settings
     await prefs.setBool('ignoreCaps', ignoreCaps);
     await prefs.setBool('ignoreSpaces', ignoreSpaces);

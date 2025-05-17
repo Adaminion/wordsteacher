@@ -7,29 +7,30 @@ plugins {
 
 android {
     namespace = "com.adaminion.memorly"
-    compileSdk = 35
+    compileSdk = 35 // This is modern, good
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
         applicationId = "com.adaminion.memorly"
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 34 // Consider updating to 35 to match compileSdk if appropriate
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // Solution: Align Java compatibility with Kotlin's jvmTarget
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17 // CHANGE THIS
+        targetCompatibility = JavaVersion.VERSION_17 // CHANGE THIS
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "17" // This is fine
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig = signingConfigs.debug // For actual releases, you'll need a proper release signing config
         }
     }
 }

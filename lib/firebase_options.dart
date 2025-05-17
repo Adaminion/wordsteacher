@@ -41,49 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAnJz0kA_tBH0Fa1C1yTEfsJJSYhGHDd18',
-    appId: '1:479125264130:web:d62e424da85a792293d41b',
-    messagingSenderId: '479125264130',
-    projectId: 'vocabcoach-49dbd',
-    authDomain: 'vocabcoach-49dbd.firebaseapp.com',
-    storageBucket: 'vocabcoach-49dbd.firebasestorage.app',
-    measurementId: 'G-LS99G76DX2',
+    apiKey: 'AIzaSyAVVV2J6qCTAVH9sA9IvhVjeTWtXyrIkFs',
+    appId: '1:60132104440:web:e24c63c1163d8f7f2cc30d',
+    messagingSenderId: '60132104440',
+    projectId: 'memorly-2547a',
+    authDomain: 'memorly-2547a.firebaseapp.com',
+    storageBucket: 'memorly-2547a.firebasestorage.app',
+    measurementId: 'G-X4YXWRJET9',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCl64Qe7Qp8lbhTh0XyvLzHTfyZ283PgbM',
-    appId: '1:479125264130:android:a306d49ba26a40c893d41b',
-    messagingSenderId: '479125264130',
-    projectId: 'vocabcoach-49dbd',
-    storageBucket: 'vocabcoach-49dbd.firebasestorage.app',
+    apiKey: 'AIzaSyBBGeBukCCxB73XL1OM1VJr1qC2q3Ssn4E',
+    appId: '1:60132104440:android:102a37813ae982892cc30d',
+    messagingSenderId: '60132104440',
+    projectId: 'memorly-2547a',
+    storageBucket: 'memorly-2547a.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDhq-VrEe1x8xb3fKE0fNLd1mxpBVJlFTo',
-    appId: '1:479125264130:ios:85be48e08178dbdf93d41b',
-    messagingSenderId: '479125264130',
-    projectId: 'vocabcoach-49dbd',
-    storageBucket: 'vocabcoach-49dbd.firebasestorage.app',
-    iosBundleId: 'com.example.vocabcoach',
+    apiKey: 'AIzaSyDEXVPd36wnFpE8OQqSUsm_EoO8QoZZGr0',
+    appId: '1:60132104440:ios:b17f4b576ffb148f2cc30d',
+    messagingSenderId: '60132104440',
+    projectId: 'memorly-2547a',
+    storageBucket: 'memorly-2547a.firebasestorage.app',
+    iosBundleId: 'adaminion.memorly',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDhq-VrEe1x8xb3fKE0fNLd1mxpBVJlFTo',
-    appId: '1:479125264130:ios:85be48e08178dbdf93d41b',
-    messagingSenderId: '479125264130',
-    projectId: 'vocabcoach-49dbd',
-    storageBucket: 'vocabcoach-49dbd.firebasestorage.app',
-    iosBundleId: 'com.example.vocabcoach',
+    apiKey: 'AIzaSyDEXVPd36wnFpE8OQqSUsm_EoO8QoZZGr0',
+    appId: '1:60132104440:ios:b17f4b576ffb148f2cc30d',
+    messagingSenderId: '60132104440',
+    projectId: 'memorly-2547a',
+    storageBucket: 'memorly-2547a.firebasestorage.app',
+    iosBundleId: 'adaminion.memorly',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAnJz0kA_tBH0Fa1C1yTEfsJJSYhGHDd18',
-    appId: '1:479125264130:web:3b9be46a2ddc527293d41b',
-    messagingSenderId: '479125264130',
-    projectId: 'vocabcoach-49dbd',
-    authDomain: 'vocabcoach-49dbd.firebaseapp.com',
-    storageBucket: 'vocabcoach-49dbd.firebasestorage.app',
-    measurementId: 'G-QSLXPQSK03',
+    apiKey: 'AIzaSyAVVV2J6qCTAVH9sA9IvhVjeTWtXyrIkFs',
+    appId: '1:60132104440:web:d8b09866fad5ebc52cc30d',
+    messagingSenderId: '60132104440',
+    projectId: 'memorly-2547a',
+    authDomain: 'memorly-2547a.firebaseapp.com',
+    storageBucket: 'memorly-2547a.firebasestorage.app',
+    measurementId: 'G-PW86N05HR4',
   );
 
 }
