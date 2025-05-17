@@ -30,7 +30,6 @@ class FirestoreManager {
       
       return docRef.id;
     } catch (e) {
-      print('Error saving vocabulary list: $e');
       return null;
     }
   }
@@ -53,7 +52,6 @@ class FirestoreManager {
         };
       }).toList();
     } catch (e) {
-      print('Error getting vocabulary lists: $e');
       return [];
     }
   }
@@ -73,7 +71,6 @@ class FirestoreManager {
         'a': entry['a'] ?? ''
       }).toList();
     } catch (e) {
-      print('Error getting entries: $e');
       return [];
     }
   }
@@ -84,7 +81,6 @@ class FirestoreManager {
       await _firestore.collection('files').doc(listId).delete();
       return true;
     } catch (e) {
-      print('Error deleting vocabulary list: $e');
       return false;
     }
   }
@@ -98,7 +94,6 @@ class FirestoreManager {
       });
       return true;
     } catch (e) {
-      print('Error renaming vocabulary list: $e');
       return false;
     }
   }

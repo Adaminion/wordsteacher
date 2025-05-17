@@ -45,7 +45,7 @@ Future<void> _loadCredentials() async {
       });
     }
   } catch (e) {
-    print('Error loading credentials: $e');
+    // Removed print statement
   }
 }
 
@@ -104,7 +104,7 @@ Future<void> _submit() async {
 }
 
   String getErrorMessage(String code) {
-    print ("error code: $code");
+    // Removed print statement
     switch (code) {
       case 'user-not-found':
         return 'No user found.';

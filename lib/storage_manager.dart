@@ -188,7 +188,6 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
       
       final newEntries = <Map<String, String>>[];
       for (var line in lines) {
-        print(line);
         if (line.contains('|')) {
           var parts = line.split('|');
           if (parts.length >= 2) {

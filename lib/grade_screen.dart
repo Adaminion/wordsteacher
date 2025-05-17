@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'study_screen.dart';
+import 'settings.dart';
 
 class GradeScreen extends StatelessWidget {
   final int good;
@@ -149,11 +149,26 @@ class GradeScreen extends StatelessWidget {
   }
 
   String _calculateGrade(double percentage) {
+    final settings = Settings();
+    if (settings.gradingSystem == 'A-F') { 
+    if (percentage == 100) return 'A+';
     if (percentage >= 90) return 'A';
     if (percentage >= 80) return 'B';
     if (percentage >= 70) return 'C';
     if (percentage >= 60) return 'D';
     return 'F';
+    } else {
+      if (percentage >= 90) return '1';
+      if (percentage >= 80) return '2';
+      if (percentage >= 70) return '3';
+      if (percentage >= 60) return '4';
+      if (percentage >= 50) return '5';
+      if (percentage >= 40) return '6';
+      if (percentage >= 30) return '7';
+      if (percentage >= 20) return '8';
+      if (percentage >= 10) return '9';
+      return '10';
+    }
   }
 
   Color _getGradeColor(String grade) {
