@@ -54,10 +54,10 @@ class _DrillScreenState extends State<DrillScreen> {
     // Get user answer and correct answer
     String userAnswer = answerController.text.trim();
     String correctAnswer = remainingEntries[currentIndex]['a'] ?? '';
-    
+    //
     // Store original user answer and correct answer for display
-    String originalUserAnswer = userAnswer;
-    String displayCorrectAnswer = correctAnswer;
+    //String originalUserAnswer = userAnswer;
+    //String displayCorrectAnswer = correctAnswer;
     
     // Load preference values
     bool ignoreCaps = true;

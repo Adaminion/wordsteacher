@@ -8,16 +8,33 @@ class FirestoreManager {
   // Get current user ID
   String? get _userId => _auth.currentUser?.uid;
   
-  // Save vocabulary list to Firestore
-  Future<String?> saveVocabularyList(String name, List<Map<String, String>> entries) async {
+  // Initialize user document if it doesn't exist
+  Future<void> initializeuser() async {
+    if (_userId == null) return;
+    
+    final userDoc = _firestore.collection('users').doc(_userId);
+    final docSnapshot = await userDoc.get();
+    
+    if (!docSnapshot.exists) {
+      await userDoc.set({
+        'displayName': _auth.currentUser?.displayName ?? 'user',
+        'email': _auth.currentUser?.email ?? '',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+  
+  // Save factsheet to Firestore
+  Future<String?> saveFactsheet(String name, List<Map<String, String>> entries) async {
     if (_userId == null) return null;
     
     try {
-      // Create reference to the file document
-      final docRef = _firestore.collection('files').doc();
+      // Create reference to the factsheet document
+      final docRef = _firestore.collection('factsheets').doc();
       
-      // Set the data for the vocabulary list
+      // Set the data for the factsheet
       await docRef.set({
+        'userId': _userId, // Associate with current user
         'comm': name,
         'dateAdded': FieldValue.serverTimestamp(),
         'dateModified': FieldValue.serverTimestamp(),
@@ -30,16 +47,21 @@ class FirestoreManager {
       
       return docRef.id;
     } catch (e) {
+      print('Error saving factsheet: $e');
       return null;
     }
   }
   
-  // Get all vocabulary lists
-  Future<List<Map<String, dynamic>>> getAllVocabularyLists() async {
+  // Get all factsheets for the current user
+  Future<List<Map<String, dynamic>>> getAllFactsheets() async {
     if (_userId == null) return [];
     
     try {
-      final snapshot = await _firestore.collection('files').get();
+      final snapshot = await _firestore
+          .collection('factsheets')
+          .where('userId', isEqualTo: _userId) // Only get current user's factsheets
+          .orderBy('dateModified', descending: true) // Most recently modified first
+          .get();
       
       return snapshot.docs.map((doc) {
         final data = doc.data();
@@ -52,18 +74,27 @@ class FirestoreManager {
         };
       }).toList();
     } catch (e) {
+      print('Error getting factsheets: $e');
       return [];
     }
   }
   
-  // Get entries from a specific vocabulary list
-  Future<List<Map<String, String>>> getEntriesFromList(String listId) async {
+  // Get entries from a specific factsheet
+  Future<List<Map<String, String>>> getEntriesFromFactsheet(String factsheetId) async {
     try {
-      final docSnapshot = await _firestore.collection('files').doc(listId).get();
+      final docSnapshot = await _firestore.collection('factsheets').doc(factsheetId).get();
       
       if (!docSnapshot.exists) return [];
       
+      // Check if the factsheet belongs to the current user
       final data = docSnapshot.data()!;
+      if (data['userId'] != _userId) {
+        // Optional: Check if it's shared before returning empty
+        if (!(data['isShared'] == true)) {
+          return [];
+        }
+      }
+      
       final List<dynamic> rawEntries = data['entries'] ?? [];
       
       return rawEntries.map<Map<String, String>>((entry) => {
@@ -71,29 +102,100 @@ class FirestoreManager {
         'a': entry['a'] ?? ''
       }).toList();
     } catch (e) {
+      print('Error getting entries: $e');
       return [];
     }
   }
   
-  // Delete a vocabulary list
-  Future<bool> deleteVocabularyList(String listId) async {
+  // Delete a factsheet
+  Future<bool> deleteFactsheet(String factsheetId) async {
     try {
-      await _firestore.collection('files').doc(listId).delete();
+      // Verify ownership before deletion
+      final docSnapshot = await _firestore.collection('factsheets').doc(factsheetId).get();
+      if (!docSnapshot.exists || docSnapshot.data()?['userId'] != _userId) {
+        return false;
+      }
+      
+      await _firestore.collection('factsheets').doc(factsheetId).delete();
       return true;
     } catch (e) {
+      print('Error deleting factsheet: $e');
       return false;
     }
   }
   
-  // Update a vocabulary list name
-  Future<bool> renameVocabularyList(String listId, String newName) async {
+  // Update a factsheet name
+  Future<bool> renameFactsheet(String factsheetId, String newName) async {
     try {
-      await _firestore.collection('files').doc(listId).update({
+      // Verify ownership before updating
+      final docSnapshot = await _firestore.collection('factsheets').doc(factsheetId).get();
+      if (!docSnapshot.exists || docSnapshot.data()?['userId'] != _userId) {
+        return false;
+      }
+      
+      await _firestore.collection('factsheets').doc(factsheetId).update({
         'comm': newName,
         'dateModified': FieldValue.serverTimestamp(),
       });
       return true;
     } catch (e) {
+      print('Error renaming factsheet: $e');
+      return false;
+    }
+  }
+  
+  // Add new entries to existing factsheet
+  Future<bool> addEntriesToFactsheet(String factsheetId, List<Map<String, String>> newEntries) async {
+    try {
+      // Get the current factsheet
+      final docSnapshot = await _firestore.collection('factsheets').doc(factsheetId).get();
+      if (!docSnapshot.exists || docSnapshot.data()?['userId'] != _userId) {
+        return false;
+      }
+      
+      // Get current entries
+      final data = docSnapshot.data()!;
+      final List<dynamic> existingEntries = data['entries'] ?? [];
+      
+      // Prepare new entries in the correct format
+      final formattedNewEntries = newEntries.map((e) => {
+        'q': e['q'] ?? '',
+        'a': e['a'] ?? ''
+      }).toList();
+      
+      // Combine existing and new entries
+      final updatedEntries = [...existingEntries, ...formattedNewEntries];
+      
+      // Update factsheet
+      await _firestore.collection('factsheets').doc(factsheetId).update({
+        'entries': updatedEntries,
+        'entryCount': updatedEntries.length,
+        'dateModified': FieldValue.serverTimestamp(),
+      });
+      
+      return true;
+    } catch (e) {
+      print('Error adding entries: $e');
+      return false;
+    }
+  }
+  
+  // Toggle sharing status of a factsheet
+  Future<bool> toggleFactsheetSharing(String factsheetId, bool isShared) async {
+    try {
+      // Verify ownership before updating
+      final docSnapshot = await _firestore.collection('factsheets').doc(factsheetId).get();
+      if (!docSnapshot.exists || docSnapshot.data()?['userId'] != _userId) {
+        return false;
+      }
+      
+      await _firestore.collection('factsheets').doc(factsheetId).update({
+        'isShared': isShared,
+        'dateModified': FieldValue.serverTimestamp(),
+      });
+      return true;
+    } catch (e) {
+      print('Error toggling sharing: $e');
       return false;
     }
   }

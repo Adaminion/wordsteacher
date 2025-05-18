@@ -26,7 +26,7 @@ class StorageManagerScreen extends StatefulWidget {
 class _StorageManagerScreenState extends State<StorageManagerScreen> with SingleTickerProviderStateMixin {
   List<Reference> files = [];
   List<Map<String, dynamic>> firestoreFiles = [];
-  final user = FirebaseAuth.instance.currentUser;
+  final user = FirebaseAuth.instance.currentUser; // Changed from user to user
   bool isLoading = false;
   late TabController _tabController;
   final FirestoreManager _firestoreManager = FirestoreManager();
@@ -45,12 +45,12 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
     super.dispose();
   }
 
-  Future<void> _loadFileList() async {
-    if (user == null) return;
+ Future<void> _loadFileList() async {
+    if (user == null) return; // Changed from user to user
     
     setState(() => isLoading = true);
     try {
-      final result = await FirebaseStorage.instance.ref(user!.uid).listAll();
+      final result = await FirebaseStorage.instance.ref(user!.uid).listAll(); // Changed from user to user
       setState(() {
         files = result.items;
         isLoading = false;
@@ -73,7 +73,7 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
     
     setState(() => isLoading = true);
     try {
-      final files = await _firestoreManager.getAllVocabularyLists();
+      final files = await _firestoreManager.getAllFactsheets();
       setState(() {
         firestoreFiles = files;
         isLoading = false;
@@ -138,7 +138,7 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
       setState(() => isLoading = true);
       
       // Save to Firestore
-      final docId = await _firestoreManager.saveVocabularyList(
+      final docId = await _firestoreManager.saveFactsheet(
         filename, 
         widget.entries
       );
@@ -232,7 +232,7 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
     try {
       setState(() => isLoading = true);
       
-      final entries = await _firestoreManager.getEntriesFromList(docId);
+        final entries = await _firestoreManager.getEntriesFromFactsheet(docId);
       
       if (entries.isEmpty) {
         throw Exception('No entries found in the document');
@@ -344,7 +344,7 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
     try {
       setState(() => isLoading = true);
       
-      final success = await _firestoreManager.deleteVocabularyList(docId);
+      final success = await _firestoreManager.deleteFactsheet(docId);
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -425,7 +425,7 @@ class _StorageManagerScreenState extends State<StorageManagerScreen> with Single
     try {
       setState(() => isLoading = true);
       
-      final success = await _firestoreManager.renameVocabularyList(docId, newName);
+      final success = await _firestoreManager.renameFactsheet(docId, newName);
       
       if (success && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
