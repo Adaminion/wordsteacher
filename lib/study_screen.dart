@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'feedback_generator.dart';
-import 'kiciomodul.dart';
+
 
 enum StudyMode {
   test,   // Standard test with all questions 

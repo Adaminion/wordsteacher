@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 /// Model for a single fact sheet
 typedef Entry = Map<String, String>;
 
+// fact_sheets_screen.dart
 class FactSheet {
   final String id;
   final String name;
-  final List<Entry> entries;
+  final List<Entry> entries; // Keep this if you plan to load them on detail view
+  final int entryCount;     // Add this
 
-  FactSheet({required this.id, required this.name, required this.entries});
+  FactSheet({
+    required this.id, 
+    required this.name, 
+    required this.entries,
+    required this.entryCount, // Add this
+  });
 }
 
 /// Callback signatures
@@ -84,7 +91,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               final sheet = sheets[i];
               return ListTile(
                 title: Text(sheet.name),
-                subtitle: Text('${sheet.entries.length} entries'),
+                subtitle: Text('${sheet.entryCount} entries'), // Use entryCount here
                 onTap: () {
                   // navigate to editor if needed
                 },

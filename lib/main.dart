@@ -15,8 +15,7 @@ import 'help_screen.dart';
 import 'options_screen.dart';
 import 'settings.dart';
 //import 'storage_manager.dart';
-import 'kiciomodul.dart';
-final String wersja = 'Memorly  v. 8.2.0 alpha';
+final String wersja = 'Memorly  v.0.8.45 beta    - ${DateTime.now()}';
 
 bool showBanner = true;
 void main() async {
@@ -154,6 +153,8 @@ class memorlyHome extends StatefulWidget {
 }
 
 class _memorlyHomeState extends State<memorlyHome> {
+
+    List<Map<String, String>> entries = [];
    bool get isUserLoggedIn => FirebaseAuth.instance.currentUser != null;
 
   TextEditingController newQCtrl = TextEditingController();
@@ -490,20 +491,24 @@ void _showContactForm() {
       },
       child: Text('Options'),
     ),
-    ElevatedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FactSheetsScreen(
-              loadSheets: () => FirestoreManager().getAllFactsheets(),
-              saveSheet: (name, entries) =>
-                  FirestoreManager().saveFactsheet(name, entries),
-            ),
-          ),
-        );
-      },
-      child: Text('Manage Online Files'),
+
+
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => FactSheetsScreen(
+          loadSheets: () => FirestoreManager().getAllFactsheets(),
+          // 'entries' here will now correctly refer to _memorlyHomeState.entries
+          saveSheet: (name, _) =>
+              FirestoreManager().saveFactsheet(name, entries),
+        ),
+      ),
+    );
+  },
+  child: Text('Manage Online Files'),
+
     ),
     ElevatedButton(
       onPressed: () {
