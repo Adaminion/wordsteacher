@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'feedback_generator.dart';
-
+import 'kiciomodul.dart';
 
 enum StudyMode {
   test,   // Standard test with all questions 
@@ -126,7 +126,7 @@ class _StudyScreenState extends State<StudyScreen> {
   bool determinedIsCorrect = userAnswer == correctAnswer; // Renamed to avoid conflict
 
   setState(() {
-    this.isCorrect = determinedIsCorrect; // Update state variable 'isCorrect'
+    isCorrect = determinedIsCorrect; // Update state variable 'isCorrect'
     lastUserAnswer = displayUserAnswer; 
     answerController.text = displayCorrectAnswer; // Show correct answer in field
 

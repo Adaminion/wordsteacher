@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
+import 'fact_sheets_screen.dart'; // for FactSheet
+import 'kiciomodul.dart';
 class FirestoreManager {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -9,7 +10,7 @@ class FirestoreManager {
   String? get _userId => _auth.currentUser?.uid;
   
   // Initialize user document if it doesn't exist
-  Future<void> initializeuser() async {
+  Future<void> initializeUser() async {
     if (_userId == null) return;
     
     final userDoc = _firestore.collection('users').doc(_userId);
@@ -29,8 +30,18 @@ class FirestoreManager {
     if (_userId == null) return null;
     
     try {
-      // Create reference to the factsheet document
+
+            print(entries.length);
+
+                      
+           print(entries.length);
+           print("savinbg");
+                
+
+
+                  // Create reference to the factsheet document
       final docRef = _firestore.collection('factsheets').doc();
+
       
       // Set the data for the factsheet
       await docRef.set({
@@ -53,31 +64,23 @@ class FirestoreManager {
   }
   
   // Get all factsheets for the current user
-  Future<List<Map<String, dynamic>>> getAllFactsheets() async {
-    if (_userId == null) return [];
-    
-    try {
-      final snapshot = await _firestore
-          .collection('factsheets')
-          .where('userId', isEqualTo: _userId) // Only get current user's factsheets
-          .orderBy('dateModified', descending: true) // Most recently modified first
-          .get();
-      
-      return snapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'id': doc.id,
-          'name': data['comm'] ?? 'Unnamed',
-          'entryCount': data['entryCount'] ?? 0,
-          'dateAdded': data['dateAdded'],
-          'dateModified': data['dateModified'],
-        };
-      }).toList();
-    } catch (e) {
-      print('Error getting factsheets: $e');
-      return [];
-    }
-  }
+ Future<List<FactSheet>> getAllFactsheets() async {
+  if (_userId == null) return [];
+  final snapshot = await _firestore
+      .collection('factsheets')
+      .where('userId', isEqualTo: _userId)
+      .orderBy('dateModified', descending: true)
+      .get();
+
+  return snapshot.docs.map((doc) {
+    final data = doc.data();
+    return FactSheet(
+      id: doc.id,
+      name: data['comm'] ?? 'Unnamed',
+      entries: [], // or call getEntriesFromFactsheet(doc.id)
+    );
+  }).toList();
+}
   
   // Get entries from a specific factsheet
   Future<List<Map<String, String>>> getEntriesFromFactsheet(String factsheetId) async {

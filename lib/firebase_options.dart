@@ -41,7 +41,7 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyAVVV2J6qCTAVH9sA9IvhVjeTWtXyrIkFs',
+    apiKey: 'AIzaSyBiql9_mk51puPfcP8auYvSGyWnRnXjf38',
     appId: '1:60132104440:web:e24c63c1163d8f7f2cc30d',
     messagingSenderId: '60132104440',
     projectId: 'memorly-2547a',
@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyBBGeBukCCxB73XL1OM1VJr1qC2q3Ssn4E',
+    apiKey: 'AIzaSyBjHv0QEaStJlT0Zc72tYeHjEQgylTdg_4',
     appId: '1:60132104440:android:102a37813ae982892cc30d',
     messagingSenderId: '60132104440',
     projectId: 'memorly-2547a',
@@ -59,7 +59,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDEXVPd36wnFpE8OQqSUsm_EoO8QoZZGr0',
+    apiKey: 'AIzaSyCJ7ETQaz4DVPtXihg8T69Trg-59fwGyi0',
     appId: '1:60132104440:ios:b17f4b576ffb148f2cc30d',
     messagingSenderId: '60132104440',
     projectId: 'memorly-2547a',
@@ -68,7 +68,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDEXVPd36wnFpE8OQqSUsm_EoO8QoZZGr0',
+    apiKey: 'AIzaSyAXidQSozD_e5LzzjtcL55n7l8XXJ7Sz48',
     appId: '1:60132104440:ios:b17f4b576ffb148f2cc30d',
     messagingSenderId: '60132104440',
     projectId: 'memorly-2547a',
@@ -77,7 +77,7 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyAVVV2J6qCTAVH9sA9IvhVjeTWtXyrIkFs',
+    apiKey: 'AIzaSyBa5TOrDRsT8Dp2_mvP8vSKnDqmT24DjqY',
     appId: '1:60132104440:web:d8b09866fad5ebc52cc30d',
     messagingSenderId: '60132104440',
     projectId: 'memorly-2547a',

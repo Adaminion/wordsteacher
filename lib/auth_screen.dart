@@ -1,6 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'firestore_manager.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -12,7 +13,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   bool rememberMe = false;
 final storage = FlutterSecureStorage();
-
+final _db = FirestoreManager();
 
 
     @override
@@ -26,6 +27,7 @@ final storage = FlutterSecureStorage();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nameController = TextEditingController();
+  final _displayNameController = TextEditingController();
  //final _emailController = TextEditingController(text: "a@adaminion.com");
  //final _passwordController = TextEditingController(text: "123456");
 
@@ -38,6 +40,7 @@ Future<void> _loadCredentials() async {
     if (remember == 'true') {
       final email = await storage.read(key: 'email');
       final password = await storage.read(key: 'password');
+      final displayName = await storage.read(key: 'displayName');
       if (email != null) _emailController.text = email;
       if (password != null) _passwordController.text = password;
       setState(() {
@@ -54,11 +57,13 @@ Future<void> _saveCredentials() async {
     await storage.write(key: 'email', value: _emailController.text.trim());
     await storage.write(key: 'password', value: _passwordController.text.trim());
     await storage.write(key: 'remember', value: 'true');
+    await storage.write(key: 'displayName', value: _displayNameController.text.trim());
   } else {
     // Clear saved credentials if "Remember Me" is disabled
     await storage.delete(key: 'email');
     await storage.delete(key: 'password');
     await storage.write(key: 'remember', value: 'false');
+    await storage.delete(key: 'displayName');
   }
 }
 
@@ -75,9 +80,11 @@ Future<void> _submit() async {
     _passwordController.text = 'kicius';
   }
     if (_isLogin) {
-      userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+ userCredential = await FirebaseAuth.instance
+      .signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        
       );
       await _saveCredentials();
       Navigator.of(context).pop();

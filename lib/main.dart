@@ -1,25 +1,22 @@
-import 'dart:io';
 import 'dart:math';
 import 'study_screen.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'firestore_manager.dart';
+//imimport 'package:firebaseim_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'fact_sheets_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-//import 'drill_screen.dart';
-//import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
+//import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'firebase_options.dart';
 import 'auth_screen.dart';
 import 'help_screen.dart';
 import 'options_screen.dart';
 import 'settings.dart';
-import 'storage_manager.dart';
-
-final String wersja = 'Memorly  v. 0.1.0 beta';
-
+//import 'storage_manager.dart';
+import 'kiciomodul.dart';
+final String wersja = 'Memorly  v. 8.2.0 alpha';
 
 bool showBanner = true;
 void main() async {
@@ -34,6 +31,7 @@ void main() async {
   }
 
   await Firebase.initializeApp(
+
     options: DefaultFirebaseOptions.currentPlatform,
   );
   await Settings().load();
@@ -157,7 +155,7 @@ class memorlyHome extends StatefulWidget {
 
 class _memorlyHomeState extends State<memorlyHome> {
    bool get isUserLoggedIn => FirebaseAuth.instance.currentUser != null;
-  List<Map<String, String>> entries = [];
+
   TextEditingController newQCtrl = TextEditingController();
   TextEditingController newACtrl = TextEditingController();
   FocusNode questionFocusNode = FocusNode();
@@ -197,6 +195,9 @@ class _memorlyHomeState extends State<memorlyHome> {
     
 
   Future<String?> _promptFilename() async {
+    
+                print(entries.length);
+                print('tu8e');
     return await showDialog<String>(
       context: context,
       builder: (ctx) {
@@ -404,7 +405,7 @@ void _showContactForm() {
     });
   }
 
-  Widget _buildFileControls() => Wrap(
+ Widget _buildFileControls() => Wrap(
   spacing: 8,
   runSpacing: 8,
   children: [
@@ -423,50 +424,60 @@ void _showContactForm() {
     ),
     ElevatedButton(
       onPressed: entries.isEmpty
-        ? null
-        : () async {
-            final prefs = await SharedPreferences.getInstance();
-            final numberOfQuestions = prefs.getInt('numberOfQuestions') ?? 0;
-            final repeatQuestions = prefs.getBool('repeatQuestions') ?? false;
-            List<Map<String, String>> testEntries = List.from(entries);
-            if (numberOfQuestions > 0) {
-              if (repeatQuestions) {
-                testEntries = [];
-                final random = Random();
-                for (int i = 0; i < numberOfQuestions; i++) {
-                  testEntries.add(entries[random.nextInt(entries.length)]);
-                }
-              } else {
-                testEntries = List.from(entries)..shuffle();
-                testEntries = testEntries.take(min(numberOfQuestions, entries.length)).toList();
-              }
-            }
+          ? null
+          : () async {
+              final prefs = await SharedPreferences.getInstance();
+              final numberOfQuestions = prefs.getInt('numberOfQuestions') ?? 0;
+              final repeatQuestions = prefs.getBool('repeatQuestions') ?? false;
+              List<Map<String, String>> testEntries = List.from(entries);
+
+              if (numberOfQuestions > 0) {
             
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => StudyScreen(
-                entries: testEntries,
-                mode: StudyMode.test,
-              )),
-            ).then((_) => setState(() {}));
-          },
+                if (repeatQuestions) {
+                  testEntries = [];
+                  final random = Random();
+                  for (int i = 0; i < numberOfQuestions; i++) {
+                    testEntries.add(entries[random.nextInt(entries.length)]);
+                  }
+                } else {
+                  testEntries.shuffle();
+                  testEntries = testEntries
+                      .take(min(numberOfQuestions, testEntries.length))
+                      .toList();
+                }
+              }
+
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StudyScreen(
+                    entries: testEntries,
+                    mode: StudyMode.test,
+                  ),
+                ),
+              );
+              setState(() {});
+            },
       child: Text('Start Test'),
     ),
     ElevatedButton(
       onPressed: entries.isEmpty
-        ? null
-        : () async {
-            List<Map<String, String>> drillEntries = List.from(entries);
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => StudyScreen(
-                entries: drillEntries,
-                mode: StudyMode.drill,
-              )),
-            ).then((_) => setState(() {}));
-          },
+          ? null
+          : () async {
+              final drillEntries = List<Map<String, String>>.from(entries);
+              await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => StudyScreen(
+                    entries: drillEntries,
+                    mode: StudyMode.drill,
+                  ),
+                ),
+              );
+              setState(() {});
+            },
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange, // Different color to make it stand out
+        backgroundColor: Colors.orange,
       ),
       child: Text('Start Drill'),
     ),
@@ -480,58 +491,33 @@ void _showContactForm() {
       child: Text('Options'),
     ),
     ElevatedButton(
-      onPressed: isUserLoggedIn 
-        ? () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => StorageManagerScreen(
-                  entries: entries,
-                  onLoadEntries: (loadedEntries) {
-                    setState(() {
-                      entries = loadedEntries;
-                      newQCtrl.clear();
-                      newACtrl.clear();
-                      editingIndex = null;
-      
-                    });
-                  },
-                  onSaveEntries: () async {
-                    final name = await _promptFilename();
-                    if (name != null) {
-                      final content = entries.map((e) => '${e['q']}|${e['a']}').join('\n');
-                      final dir = await getApplicationDocumentsDirectory();
-                      final file = File('${dir.path}/$name');
-                      await file.writeAsString(content);
-                      final ref = FirebaseStorage.instance
-                          .ref('${FirebaseAuth.instance.currentUser!.uid}/$name');
-                      await ref.putFile(file);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("Saved: $name")),
-                      );
-                    }
-                  },
-                ),
-              ),
-            );
-          }
-        : null,
-      child: Text("Manage Online Files"),
-    ),
-    ElevatedButton(
-      onPressed: null,
-    child: Text("Extra button"),
-    ),
-    
-  
-
-    ElevatedButton(
-            onPressed: _showAboutPage,
-            child: Text('Help/About'),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FactSheetsScreen(
+              loadSheets: () => FirestoreManager().getAllFactsheets(),
+              saveSheet: (name, entries) =>
+                  FirestoreManager().saveFactsheet(name, entries),
+            ),
           ),
-   
+        );
+      },
+      child: Text('Manage Online Files'),
+    ),
+    ElevatedButton(
+      onPressed: () {
+        // TODO: implement extra action
+      },
+      child: Text('Extra button'),
+    ),
+    ElevatedButton(
+      onPressed: _showAboutPage,
+      child: Text('Help/About'),
+    ),
   ],
 );
+
       
   Widget _buildManualEntry() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -777,6 +763,10 @@ void _showContactForm() {
   });
 
   String message = 'Added ${newEntries.length} entries from clipboard';
+               
+                print(entries.length);
+                print("tu9");
+                
   if (hasErrors) {
     message += ' (some lines could not be processed)';
   }
@@ -794,6 +784,11 @@ void _showContactForm() {
     if (newQCtrl.text.isEmpty || newACtrl.text.isEmpty) return;
     setState(() {
       entries.add({'q': newQCtrl.text, 'a': newACtrl.text});
+          
+                print(entries.length);
+                print("tu10");
+                
+
       newQCtrl.clear();
       newACtrl.clear();
       saved = false;
