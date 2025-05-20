@@ -204,7 +204,62 @@ class FirestoreManager {
       return false;
     }
   }
-  
+  // Get all GLOBAL read-only factsheets
+  Future<List<FactSheet>> getAllGlobalFactsheets() async {
+    try {
+      print('Fetching all global factsheets');
+      final snapshot = await _firestore
+          .collection('globalFactsheets') // Target the new global collection
+          .orderBy('comm') // Or 'dateAdded', or any other relevant field for ordering
+          .get();
+      
+      print('Fetched ${snapshot.docs.length} global factsheets');
+      
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        return FactSheet(
+          id: doc.id,
+          name: data['comm'] ?? 'Unnamed Global Sheet',
+          entryCount: data['entryCount'] ?? 0,
+          entries: [], // Keep empty for summary list
+               isGlobal: true, // Add a flag to differentiate in the UI/model
+        );
+      }).toList();
+    } catch (e) {
+      print('Error getting global factsheets: $e');
+      return [];
+    }
+  }
+
+  // Get entries from a specific GLOBAL factsheet
+  Future<List<Entry>> getEntriesFromGlobalFactsheet(String factsheetId) async {
+    try {
+      print('Fetching entries for global factsheet: $factsheetId');
+      final docSnapshot = await _firestore.collection('globalFactsheets').doc(factsheetId).get();
+      
+      if (!docSnapshot.exists) {
+        print('Global factsheet $factsheetId does not exist.');
+        return [];
+      }
+      
+      final data = docSnapshot.data() as Map<String, dynamic>;
+      final List<dynamic> rawEntries = data['entries'] ?? [];
+      print('Fetched ${rawEntries.length} entries for global factsheet $factsheetId');
+      
+      return rawEntries.map<Map<String, String>>((entry) {
+        if (entry is Map) {
+          return {
+            'q': entry['q']?.toString() ?? '',
+            'a': entry['a']?.toString() ?? ''
+          };
+        }
+        return {'q': '', 'a': ''};
+      }).toList();
+    } catch (e) {
+      print('Error getting entries for global factsheet $factsheetId: $e');
+      return [];
+    }
+  }
   // Update a factsheet name in the user's subcollection
   Future<bool> renameFactsheet(String factsheetId, String newName) async {
     if (_userId == null) {

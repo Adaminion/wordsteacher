@@ -1,3 +1,5 @@
+// © Adaminion 2025  2505200810
+
 import 'dart:math';
 import 'study_screen.dart';
 import 'firestore_manager.dart';
@@ -15,7 +17,7 @@ import 'help_screen.dart';
 import 'options_screen.dart';
 import 'settings.dart';
 //import 'storage_manager.dart';
-final String wersja = 'Memorly  v.0.8.45 beta    - ${DateTime.now()}';
+final String wersja = 'Memorly  v.0.8.6 beta    - 2505200810';
 
 bool showBanner = true;
 void main() async {
@@ -406,7 +408,9 @@ void _showContactForm() {
     });
   }
 
- Widget _buildFileControls() => Wrap(
+ // In main.dart -> within _memorlyHomeState class
+
+Widget _buildFileControls() => Wrap(
   spacing: 8,
   runSpacing: 8,
   children: [
@@ -427,13 +431,13 @@ void _showContactForm() {
       onPressed: entries.isEmpty
           ? null
           : () async {
+              // ... (your existing Start Test logic) ...
               final prefs = await SharedPreferences.getInstance();
               final numberOfQuestions = prefs.getInt('numberOfQuestions') ?? 0;
               final repeatQuestions = prefs.getBool('repeatQuestions') ?? false;
               List<Map<String, String>> testEntries = List.from(entries);
 
               if (numberOfQuestions > 0) {
-            
                 if (repeatQuestions) {
                   testEntries = [];
                   final random = Random();
@@ -462,9 +466,100 @@ void _showContactForm() {
       child: Text('Start Test'),
     ),
     ElevatedButton(
+      // "Manage Online Files" button
+      onPressed: () {
+        // Optional: Check if user is logged in before even opening the screen,
+        // or let FactSheetsScreen handle display for non-logged-in users (e.g., show only global)
+        // if (FirebaseAuth.instance.currentUser == null) {
+        //   ScaffoldMessenger.of(context).showSnackBar(
+        //     const SnackBar(content: Text('Please log in to manage your online sheets.')),
+        //   );
+        //   return;
+        // }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => FactSheetsScreen(
+              loadUserSheets: () async {
+                // Ensure user is logged in before attempting to load their sheets
+                if (FirebaseAuth.instance.currentUser == null) {
+                  print("LoadUserSheets: Not logged in, returning empty list.");
+                  return [];
+                }
+                return FirestoreManager().getAllFactsheets(); // Gets user's sheets
+              },
+              loadGlobalSheets: () => FirestoreManager().getAllGlobalFactsheets(),
+              saveSheet: (name, screenEntries) {
+                // 'screenEntries' is typically [] from FactSheetsScreen when creating a new sheet.
+                // The actual entries to save are from _memorlyHomeState's 'entries' list.
+                if (FirebaseAuth.instance.currentUser == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('You must be logged in to save a new sheet.')),
+                    );
+                    return Future.value(null); // Return a future resolving to null
+                }
+                return FirestoreManager().saveFactsheet(name, entries); // 'entries' is from _memorlyHomeState
+              },
+              deleteSheet: (sheetId) async {
+                if (FirebaseAuth.instance.currentUser == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Login required to delete sheets.')),
+                  );
+                  return false;
+                }
+                return FirestoreManager().deleteFactsheet(sheetId);
+              },
+              renameSheet: (sheetId, newName) async {
+                if (FirebaseAuth.instance.currentUser == null) {
+                   ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Login required to rename sheets.')),
+                  );
+                  return false;
+                }
+                return FirestoreManager().renameFactsheet(sheetId, newName);
+              },
+              openSheetInEditor: (FactSheet sheetToLoad) async {
+                // This callback handles both user sheets and global sheets.
+                // It will update the main _memorlyHomeState.entries list.
+                final List<Entry> sheetEntries;
+                if (sheetToLoad.isGlobal) {
+                  sheetEntries = await FirestoreManager().getEntriesFromGlobalFactsheet(sheetToLoad.id);
+                } else {
+                  // For user sheets, ensure they are logged in, though FactSheetsScreen might prevent selection if not.
+                  if (FirebaseAuth.instance.currentUser == null) {
+                     ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Login required to load your sheets into editor.')),
+                     );
+                     return;
+                  }
+                  sheetEntries = await FirestoreManager().getEntriesFromFactsheet(sheetToLoad.id);
+                }
+                
+                setState(() {
+                  entries.clear(); // 'this.entries' refers to _memorlyHomeState.entries
+                  entries.addAll(sheetEntries);
+                  status = sheetToLoad.isGlobal ? 'Viewing Global: ${sheetToLoad.name}' : 'Editing: ${sheetToLoad.name}';
+                  currentPath = null; 
+                  saved = true; // Consider it "saved" as it's loaded from a source
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('"${sheetToLoad.name}" displayed with ${sheetEntries.length} entries.')),
+                    );
+                  }
+                });
+              },
+              // REMOVED toggleShareSheet from here
+            ),
+          ),
+        );
+      },
+      child: Text('Manage Online Files'),
+    ),
+    ElevatedButton(
       onPressed: entries.isEmpty
           ? null
           : () async {
+              // ... (your existing Start Drill logic) ...
               final drillEntries = List<Map<String, String>>.from(entries);
               await Navigator.push(
                 context,
@@ -491,25 +586,6 @@ void _showContactForm() {
       },
       child: Text('Options'),
     ),
-
-
-ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => FactSheetsScreen(
-          loadSheets: () => FirestoreManager().getAllFactsheets(),
-          // 'entries' here will now correctly refer to _memorlyHomeState.entries
-          saveSheet: (name, _) =>
-              FirestoreManager().saveFactsheet(name, entries),
-        ),
-      ),
-    );
-  },
-  child: Text('Manage Online Files'),
-
-    ),
     ElevatedButton(
       onPressed: () {
         // TODO: implement extra action
@@ -522,7 +598,6 @@ ElevatedButton(
     ),
   ],
 );
-
       
   Widget _buildManualEntry() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -604,12 +679,87 @@ ElevatedButton(
     ],
   );
 
-  Future<void> _copyToClipboard() async {
-    final text = entries.map((e) => '${e['q']}\n${e['a']}').join('\n');
-    await Clipboard.setData(ClipboardData(text: text));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Copied ${entries.length} entries to clipboard')),
-    );
+Future<void> _copyToClipboard() async {
+    if (entries.isEmpty) {
+      if (mounted) { // Check if widget is still in the tree
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No entries to copy.')),
+        );
+      }
+      return;
+    }
+
+    bool hasCommasInEntries = false;
+    for (var entry in entries) {
+      if (entry['q']!.contains(',') || entry['a']!.contains(',')) {
+        hasCommasInEntries = true;
+        break;
+      }
+    }
+
+    String textToCopy;
+
+    if (hasCommasInEntries) {
+      // Prompt user for action
+      final choice = await showDialog<String>(
+        context: context,
+        barrierDismissible: false, // User must make a choice
+        builder: (ctx) => AlertDialog(
+          title: Text('Commas Detected in Entries'),
+          content: Text(
+              'Your entries contain commas. How would you like to format the text for the clipboard?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Line by Line (Q then A)'),
+              onPressed: () => Navigator.of(ctx).pop('lineByLine'),
+            ),
+            TextButton(
+              child: Text('Remove Commas (Q,A)'),
+              onPressed: () => Navigator.of(ctx).pop('removeCommas'),
+            ),
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () => Navigator.of(ctx).pop('cancel'),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == null || choice == 'cancel') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Copy operation cancelled.')),
+          );
+        }
+        return;
+      }
+
+      if (choice == 'lineByLine') {
+        textToCopy = entries.map((e) => '${e['q']}\n${e['a']}').join('\n'); // Added extra newline for better separation of pairs
+      } else { // 'removeCommas'
+        textToCopy = entries.map((e) {
+          String question = e['q']!.replaceAll(',', ' '); // Replace comma with space
+          String answer = e['a']!.replaceAll(',', ' ');   // Replace comma with space
+          return '$question,$answer';
+        }).join('\n');
+      }
+    } else {
+      // Default format: question,answer (since no commas were found)
+      textToCopy = entries.map((e) => '${e['q']},${e['a']}').join('\n');
+    }
+
+    if (textToCopy.isNotEmpty) {
+      await Clipboard.setData(ClipboardData(text: textToCopy));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Copied ${entries.length} entries to clipboard')),
+        );
+      }
+    } else if (mounted) { // Should not happen if entries is not empty, but as a safeguard
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Nothing was copied to clipboard.')),
+        );
+    }
   }
 
   Widget _buildWordList() => Column(
@@ -693,98 +843,178 @@ ElevatedButton(
     });
   }
 
-  Future<void> _pasteFromClipboard() async {
-   try {
-  ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
-  if (data == null || data.text == null || data.text!.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Clipboard is empty')),
-    );
-    return;
-  }
-
-  String text = data.text!;
-  List<String> lines = text.split('\n');
-  
-  // Ask user if they want to append or replace
-  bool shouldReplace = await showDialog<bool>(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text('Paste from Clipboard'),
-      content: Text('Do you want to replace existing entries or append to them?'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text('Append'),
-        ),
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text('Replace'),
-        ),
-      ],
-    ),
-  ) ?? false;
-
-  // Parse lines in question-answer pairs with error handling
-  List<Map<String, String>> newEntries = [];
-  bool hasErrors = false;
-  
-  for (int i = 0; i < lines.length; i += 2) {
-    // Skip if we don't have enough lines left for a pair
-    if (i + 1 >= lines.length) {
-      hasErrors = true;
-      continue;
-    }
-    
-    String question = lines[i].trim();
-    String answer = lines[i + 1].trim();
-    
-    // Skip empty lines but don't count as error
-    if (question.isEmpty || answer.isEmpty) continue;
-    
+ Future<void> _pasteFromClipboard() async {
     try {
-      newEntries.add({'q': question, 'a': answer});
+      ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
+      if (data == null || data.text == null || data.text!.isEmpty) {
+        if (mounted) { // Check if the widget is still in the tree
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Clipboard is empty')),
+          );
+        }
+        return;
+      }
+
+      String text = data.text!;
+      List<String> rawLines = text.split('\n');
+      List<String> lines = rawLines.map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+
+      if (lines.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Clipboard contains no processable content.')),
+          );
+        }
+        return;
+      }
+
+      // --- Format Detection ---
+      bool isCommaSeparatedFormat = true;
+      if (lines.isNotEmpty) { // Check only if there are lines
+        for (String line in lines) {
+          // A line is considered comma-separated if it has exactly one comma,
+          // and that comma is not at the beginning or end.
+          int commaCount = ','.allMatches(line).length;
+          if (commaCount != 1 || line.startsWith(',') || line.endsWith(',')) {
+            isCommaSeparatedFormat = false;
+            break;
+          }
+        }
+      } else {
+        isCommaSeparatedFormat = false; // No lines, so not comma-separated.
+      }
+      // If there's only one line and it doesn't have a comma, it's not comma-separated.
+      // Also, if it's a single line with a comma, it IS comma-separated.
+      // If it's a single line without a comma, it cannot be the Q/A newline format either (needs 2 lines).
+      // So, if lines.length == 1 and !isCommaSeparatedFormat, it means it's an invalid single line.
+      if (lines.length == 1 && !lines[0].contains(',')) {
+           // Not comma-separated, and not enough lines for Q/A format.
+           // We can let the original logic handle this, which will likely result in "No valid Q&A pairs".
+           // Or, specifically flag it here if preferred. For now, let the existing logic catch it.
+           isCommaSeparatedFormat = false; // Treat as original format for parsing attempt
+      }
+
+
+      // Ask user if they want to append or replace
+      bool? shouldReplaceNullable = await showDialog<bool>( // Make it nullable
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Paste from Clipboard'),
+          content: Text('Do you want to replace existing entries or append to them?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: Text('Append'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: Text('Replace'),
+            ),
+          ],
+        ),
+      );
+
+      // If user cancels the dialog, shouldReplaceNullable will be null.
+      if (shouldReplaceNullable == null) {
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Paste operation cancelled.')),
+            );
+        }
+        return;
+      }
+      bool shouldReplace = shouldReplaceNullable;
+
+
+      List<Map<String, String>> newEntries = [];
+      bool hasParsingErrors = false;
+
+      if (isCommaSeparatedFormat) {
+        print("Parsing as comma-separated format.");
+        for (String line in lines) {
+          List<String> parts = line.split(',');
+          // This check is somewhat redundant due to the earlier format detection,
+          // but good for safety. The earlier check ensures parts.length is exactly 2.
+          if (parts.length == 2) {
+            String question = parts[0].trim();
+            String answer = parts[1].trim();
+            if (question.isNotEmpty && answer.isNotEmpty) {
+              newEntries.add({'q': question, 'a': answer});
+            } else {
+              // Empty q or a after trim, might be an "error" or just skipped
+              hasParsingErrors = true;
+            }
+          } else {
+            // This case should ideally not be reached if isCommaSeparatedFormat is true
+            // due to the stricter check upfront.
+            hasParsingErrors = true;
+          }
+        }
+      } else {
+        print("Parsing as question-per-line format.");
+        for (int i = 0; i < lines.length; i += 2) {
+          if (i + 1 >= lines.length) {
+            hasParsingErrors = true; // Odd number of lines
+            continue;
+          }
+          String question = lines[i]; // Already trimmed
+          String answer = lines[i + 1]; // Already trimmed
+          
+          // Skip if question or answer became empty after trimming (original lines might have been just whitespace)
+          // The initial filter `where((line) => line.isNotEmpty)` already handles fully empty lines.
+          // This check is for lines that were e.g. "  " and became "" after trim().
+          if (question.isEmpty || answer.isEmpty) {
+              hasParsingErrors = true; // Consider it a parsing issue if a Q or A is missing
+              continue;
+          }
+          
+          newEntries.add({'q': question, 'a': answer});
+        }
+      }
+
+      if (newEntries.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('No valid Q&A pairs found in clipboard using detected format.')),
+          );
+        }
+        return;
+      }
+
+      if (mounted) {
+        setState(() {
+          if (shouldReplace) {
+            entries = newEntries;
+          } else {
+            entries.addAll(newEntries);
+          }
+          saved = false;
+          status = 'Editing'; // Or update based on whether entries were empty before
+        });
+
+        String message = '${shouldReplace ? 'Pasted' : 'Appended'} ${newEntries.length} entries from clipboard';
+        print(entries.length);
+        print("tu9 - after paste");
+            
+        if (hasParsingErrors) {
+          message += ' (some lines may not have been processed correctly)';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
+
     } catch (e) {
-      // If any specific pair fails to process, continue with others
-      hasErrors = true;
-      continue;
+      if (mounted) { // Check if the widget is still in the tree before showing SnackBar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error pasting from clipboard: $e')),
+        );
+      }
     }
   }
-
-  if (newEntries.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('No valid Q&A pairs found in clipboard')),
-    );
-    return;
-  }
-
-  setState(() {
-    if (shouldReplace) {
-      entries = newEntries;
-    } else {
-      entries.addAll(newEntries);
-    }
-    saved = false;
-  });
-
-  String message = 'Added ${newEntries.length} entries from clipboard';
-               
-                print(entries.length);
-                print("tu9");
-                
-  if (hasErrors) {
-    message += ' (some lines could not be processed)';
-  }
-  
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
-} catch (e) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Error pasting from clipboard: $e')),
-  );
-}
-  }
+ 
+ 
   void _addEntry() {
     if (newQCtrl.text.isEmpty || newACtrl.text.isEmpty) return;
     setState(() {
