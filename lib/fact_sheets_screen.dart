@@ -2,31 +2,38 @@ import 'package:flutter/material.dart';
 // Make sure FirestoreManager is accessible or pass its instance/methods
 
 /// Model for a single fact sheet
-typedef Entry = Map<String, String>;
+typedef Entry = Map<String, String>; // This typedef was defined here. In main.dart it was List<Map<String, String>>. Consistent?
+                                    // For FactSheet.entries, it might be better to use List<Map<String, String>> for consistency
+                                    // with how 'entries' is handled in main.dart.
+                                    // However, if Entry represents a single Q/A pair, then List<Entry> is correct for FactSheet.entries.
+                                    // FirestoreManager returns List<Map<String, String>> for getEntriesFrom...
+                                    // Let's assume Entry is Map<String, String> and thus List<Entry> for a sheet is correct.
+
 
 class FactSheet {
   final String id;
   final String name;
-  final List<Entry> entries; // Usually empty in the list view, loaded on demand
+  final List<Entry> entries; // List of Q/A pairs
   final int entryCount;
-  final bool isGlobal; // True if this is from the global collection
+  final bool isGlobal;
 
   FactSheet({
     required this.id,
     required this.name,
     required this.entries,
     required this.entryCount,
-    this.isGlobal = false, // Default to not global
+    this.isGlobal = false,
   });
 }
 
 /// Callback signatures
 typedef LoadUserSheetsCallback = Future<List<FactSheet>> Function();
 typedef LoadGlobalSheetsCallback = Future<List<FactSheet>> Function();
-typedef SaveSheetCallback = Future<String?> Function(String name, List<Entry> entries); // For new sheets
+// SaveSheetCallback in main.dart's saveSheet implies it saves _memorlyHomeState.entries,
+// so the List<Entry> here is for the structure, but the data comes from the main screen.
+typedef SaveSheetCallback = Future<String?> Function(String name, List<Map<String, String>> currentMainEntries);
 typedef DeleteSheetCallback = Future<bool> Function(String sheetId);
 typedef RenameSheetCallback = Future<bool> Function(String sheetId, String newName);
-// Callback to load a sheet's content (user's or global) back into the main screen's editor
 typedef OpenSheetInEditorCallback = Future<void> Function(FactSheet sheet);
 
 
@@ -36,8 +43,8 @@ class FactSheetsScreen extends StatefulWidget {
   final SaveSheetCallback saveSheet;
   final DeleteSheetCallback deleteSheet;
   final RenameSheetCallback renameSheet;
-  final OpenSheetInEditorCallback openSheetInEditor; // Used for both user and global sheets
-
+  final OpenSheetInEditorCallback openSheetInEditor;
+  final bool areMainEntriesEmpty; // <-- New parameter
 
   const FactSheetsScreen({
     super.key,
@@ -47,6 +54,7 @@ class FactSheetsScreen extends StatefulWidget {
     required this.deleteSheet,
     required this.renameSheet,
     required this.openSheetInEditor,
+    required this.areMainEntriesEmpty, // <-- Added to constructor
   });
 
   @override
@@ -92,7 +100,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
       }
     }
   }
-  
+
   void _clearSelection() {
     if(mounted){
       setState(() {
@@ -115,11 +123,11 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
       final globalSheetsFuture = widget.loadGlobalSheets();
 
       final results = await Future.wait([userSheetsFuture, globalSheetsFuture]);
-      
+
       if (mounted) {
         setState(() {
-          _userSheets = results[0]; // No need to cast if typedefs are correct
-          _globalSheets = results[1]; // No need to cast
+          _userSheets = results[0];
+          _globalSheets = results[1];
         });
       }
     } catch (e) {
@@ -147,6 +155,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
         content: TextField(
           controller: nameController,
           decoration: const InputDecoration(labelText: 'Sheet Name'),
+          autofocus: true,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
@@ -159,7 +168,8 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
     );
     if (name != null && name.isNotEmpty) {
       _performAction(() async {
-        final newSheetId = await widget.saveSheet(name, []); 
+        // Pass empty list for screenEntries as the callback uses main 'entries'
+        final newSheetId = await widget.saveSheet(name, []);
         if (newSheetId != null) {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -170,7 +180,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
         } else {
           if (mounted){
              ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to save sheet "$name".')),
+              SnackBar(content: Text('Failed to save sheet "$name". User might not be logged in or another error occurred.')),
             );
           }
         }
@@ -187,7 +197,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
         title: Text(_selectedSheet!.isGlobal ? 'View Global Sheet?' : 'Load Sheet?'),
         content: Text(
           _selectedSheet!.isGlobal
-              ? 'View the content of global sheet "${_selectedSheet!.name}"?'
+              ? 'View the content of global sheet "${_selectedSheet!.name}" in the main editor?'
               : 'This will replace your current unsaved entries in the main editor with the content of "${_selectedSheet!.name}". Proceed?',
         ),
         actions: [
@@ -199,17 +209,15 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
 
     if (confirm == true) {
       _performAction(() async {
-        await widget.openSheetInEditor(_selectedSheet!); // Single callback for both
+        await widget.openSheetInEditor(_selectedSheet!);
         if(mounted){
             ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(_selectedSheet!.isGlobal 
+            SnackBar(content: Text(_selectedSheet!.isGlobal
                 ? 'Viewing global sheet "${_selectedSheet!.name}".'
                 : 'Sheet "${_selectedSheet!.name}" loaded into editor.')),
           );
-          // Optionally pop this screen only if it's a user sheet being loaded for editing
-          if (!_selectedSheet!.isGlobal) {
-               Navigator.pop(context);
-          }
+          // Pop this screen after loading/viewing to return to the main editor
+          Navigator.pop(context);
         }
       });
     }
@@ -242,11 +250,11 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               SnackBar(content: Text('Sheet "${_selectedSheet!.name}" deleted.')),
             );
           }
-          _reloadData();
+          _reloadData(); // This will also clear selection
         } else {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to delete sheet.')),
+              SnackBar(content: Text('Failed to delete sheet. User might not be logged in or another error occurred.')),
             );
           }
         }
@@ -264,6 +272,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
         content: TextField(
           controller: nameController,
           decoration: InputDecoration(labelText: 'New Sheet Name'),
+          autofocus: true,
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
@@ -284,31 +293,36 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               SnackBar(content: Text('Sheet renamed to "$newName".')),
             );
           }
-          _reloadData();
+          _reloadData(); // This will also clear selection
         } else {
            if (mounted) {
              ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to rename sheet.')),
+              SnackBar(content: Text('Failed to rename sheet. User might not be logged in or another error occurred.')),
             );
            }
         }
       });
     }
   }
-  
+
   Widget _buildSheetList(List<FactSheet> sheets, String title) {
     if (sheets.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Text('No $title available.', style: TextStyle(fontStyle: FontStyle.italic)),
-      );
+      // Don't show "Loading..." message here if it's handled by the main CircularProgressIndicator
+      // Only show "No sheets available" if not loading
+      if (!((title == "Your Sheets" && _isLoadingUserSheets) || (title.startsWith("Global") && _isLoadingGlobalSheets))) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Center(child: Text('No $title available.', style: TextStyle(fontStyle: FontStyle.italic))),
+        );
+      }
+      return SizedBox.shrink(); // Show nothing if loading that specific list and it's empty
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Text(title, style: Theme.of(context).textTheme.headlineSmall), // Use headlineSmall for better hierarchy
+          child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
         ),
         ListView.builder(
           shrinkWrap: true,
@@ -323,8 +337,8 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               child: ListTile(
                 tileColor: isSelected ? Theme.of(context).primaryColorLight.withOpacity(0.3) : null,
                 leading: Icon(
-                  sheet.isGlobal 
-                    ? Icons.public 
+                  sheet.isGlobal
+                    ? Icons.public
                     : (isSelected ? Icons.check_circle : Icons.library_books),
                   color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodySmall?.color,
                 ),
@@ -339,12 +353,12 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
                     }
                   });
                 },
-                trailing: IconButton(
-                  icon: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.secondary),
-                  tooltip: 'View/Load Sheet',
+                trailing: IconButton( // Keep this for quick load/view
+                  icon: Icon(Icons.file_download_done_outlined, color: Theme.of(context).colorScheme.secondary),
+                  tooltip: sheet.isGlobal ? 'View Sheet in Editor' : 'Load Sheet into Editor',
                   onPressed: () {
-                     setState(() { _selectedSheet = sheet; });
-                     _handleLoadSelectedSheet();
+                     setState(() { _selectedSheet = sheet; }); // Select first
+                     _handleLoadSelectedSheet(); // Then load
                   },
                 ),
               ),
@@ -381,26 +395,27 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               alignment: WrapAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  icon: Icon(Icons.add_circle_outline), // Changed icon
+                  icon: Icon(Icons.add_circle_outline),
                   label: Text('Save Current as New'),
-                  onPressed: _isLoading ? null : _handleCreateNewSheet,
+                  // Updated onPressed condition
+                  onPressed: (widget.areMainEntriesEmpty || _isLoading) ? null : _handleCreateNewSheet,
                 ),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.file_download_done_outlined), // Changed icon
+                  icon: Icon(Icons.file_download_done_outlined),
                   label: Text('View/Load Selected'),
                   onPressed: _isLoading || !canLoadSelected ? null : _handleLoadSelectedSheet,
                 ),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.drive_file_rename_outline), // Changed icon
+                  icon: Icon(Icons.drive_file_rename_outline),
                   label: Text('Rename Selected'),
                   onPressed: _isLoading || !canModifySelected ? null : _handleRenameSelectedSheet,
                 ),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.delete_sweep_outlined), // Changed icon
+                  icon: Icon(Icons.delete_sweep_outlined),
                   label: Text('Delete Selected'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[600],
-                    foregroundColor: Colors.white // Ensure text is visible
+                    foregroundColor: Colors.white
                   ),
                   onPressed: _isLoading || !canModifySelected ? null : _handleDeleteSelectedSheet,
                 ),
@@ -409,17 +424,17 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
           ),
           if (_isLoadingUserSheets || _isLoadingGlobalSheets) const LinearProgressIndicator(),
           Expanded(
-            child: RefreshIndicator( // Added RefreshIndicator
+            child: RefreshIndicator(
               onRefresh: _reloadData,
               child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(), // Ensures scrollability for RefreshIndicator
+                physics: const AlwaysScrollableScrollPhysics(),
                 child: Column(
                   children: [
-                    if (_isLoadingUserSheets && _userSheets.isEmpty) 
+                    if (_isLoadingUserSheets && _userSheets.isEmpty && !_globalSheets.isNotEmpty) // Show only if both are loading or user sheets specifically
                       Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text("Loading your sheets..."))),
                     _buildSheetList(_userSheets, "Your Sheets"),
                     SizedBox(height: 16),
-                    if (_isLoadingGlobalSheets && _globalSheets.isEmpty) 
+                     if (_isLoadingGlobalSheets && _globalSheets.isEmpty && !_userSheets.isNotEmpty) // Show only if both are loading or global sheets specifically
                       Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text("Loading global sheets..."))),
                     _buildSheetList(_globalSheets, "Global Sheets (Read-Only)"),
                   ],

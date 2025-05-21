@@ -4,7 +4,10 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
     id "com.google.gms.google-services" // Firebase
 }
-
+dependencies {
+    implementation "androidx.core:core-splashscreen:1.0.0"
+    // other implementation lines…
+}
 android {
     namespace = "com.adaminion.memorly"
     compileSdk = 35 // This is modern, good
@@ -13,7 +16,7 @@ android {
     defaultConfig {
         applicationId = "com.adaminion.memorly"
         minSdk = 23
-        targetSdk = 34 // Consider updating to 35 to match compileSdk if appropriate
+        targetSdk = 35 // Consider updating to 35 to match compileSdk if appropriate
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -1,4 +1,4 @@
-// © Adaminion 2025  2505200810
+// © Adaminion 2025  2505211730
 
 import 'dart:math';
 import 'study_screen.dart';
@@ -17,7 +17,7 @@ import 'help_screen.dart';
 import 'options_screen.dart';
 import 'settings.dart';
 //import 'storage_manager.dart';
-final String wersja = 'Memorly  v.0.8.6 beta    - 2505200810';
+final String wersja = 'Memorly  v.0.8.7 beta    - 2505211340';
 
 bool showBanner = true;
 void main() async {
@@ -50,7 +50,7 @@ Widget build(BuildContext ctx) => MaterialApp(
   theme: ThemeData(
     primarySwatch: Colors.green,
     // Main background color - a very light lime/yellow
-    scaffoldBackgroundColor: const Color(0xFFF7F9D9), 
+    scaffoldBackgroundColor: const Color(0xFFF7F9D9),
     // Card and form field colors - slightly different shade for contrast
     cardColor: const Color(0xFFEFF2C0),
     // Input decorations for text fields
@@ -149,7 +149,7 @@ class ExpiredApp extends StatelessWidget {
 
 class memorlyHome extends StatefulWidget {
   const memorlyHome({super.key});
- 
+
   @override
   _memorlyHomeState createState() => _memorlyHomeState();
 }
@@ -167,12 +167,12 @@ class _memorlyHomeState extends State<memorlyHome> {
   String status = 'Idle';
   int? editingIndex;
   String? currentPath;
-  
+
   // ADD THE initState METHOD RIGHT HERE, between the variable declarations and dispose method
   @override
   void initState() {
     super.initState();
-    
+
     // Add this listener to update UI when auth state changes
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (mounted) {
@@ -195,10 +195,10 @@ class _memorlyHomeState extends State<memorlyHome> {
   }
   @override
 
-    
+
 
   Future<String?> _promptFilename() async {
-    
+
                 print(entries.length);
                 print('tu8e');
     return await showDialog<String>(
@@ -351,7 +351,7 @@ void _showAboutPage() {
 
 void _showContactForm() {
   final TextEditingController messageController = TextEditingController();
-  
+
   showDialog(
     context: context,
     builder: (BuildContext context) {
@@ -415,9 +415,11 @@ Widget _buildFileControls() => Wrap(
   runSpacing: 8,
   children: [
     ElevatedButton(
-      onPressed: () async {
+      onPressed: entries.isEmpty 
+      ? null 
+      : () async { // Removed entries.isEmpty check, button always enabled
         await _newFile();
-        updateStatus('New');
+        // updateStatus('New'); // _newFile already updates status
       },
       child: Text('Clear Memory'),
     ),
@@ -437,7 +439,7 @@ Widget _buildFileControls() => Wrap(
               final repeatQuestions = prefs.getBool('repeatQuestions') ?? false;
               List<Map<String, String>> testEntries = List.from(entries);
 
-              if (numberOfQuestions > 0) {
+              if (numberOfQuestions > 0 && entries.isNotEmpty) { // Added entries.isNotEmpty to prevent error with random.nextInt
                 if (repeatQuestions) {
                   testEntries = [];
                   final random = Random();
@@ -450,7 +452,14 @@ Widget _buildFileControls() => Wrap(
                       .take(min(numberOfQuestions, testEntries.length))
                       .toList();
                 }
+              } else if (numberOfQuestions > 0 && entries.isEmpty) {
+                 // Handle case where numberOfQuestions > 0 but entries is empty, perhaps show a message
+                 ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('No entries available to start the test.')),
+                );
+                return;
               }
+
 
               await Navigator.push(
                 context,
@@ -468,37 +477,26 @@ Widget _buildFileControls() => Wrap(
     ElevatedButton(
       // "Manage Online Files" button
       onPressed: () {
-        // Optional: Check if user is logged in before even opening the screen,
-        // or let FactSheetsScreen handle display for non-logged-in users (e.g., show only global)
-        // if (FirebaseAuth.instance.currentUser == null) {
-        //   ScaffoldMessenger.of(context).showSnackBar(
-        //     const SnackBar(content: Text('Please log in to manage your online sheets.')),
-        //   );
-        //   return;
-        // }
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (_) => FactSheetsScreen(
               loadUserSheets: () async {
-                // Ensure user is logged in before attempting to load their sheets
                 if (FirebaseAuth.instance.currentUser == null) {
                   print("LoadUserSheets: Not logged in, returning empty list.");
                   return [];
                 }
-                return FirestoreManager().getAllFactsheets(); // Gets user's sheets
+                return FirestoreManager().getAllFactsheets();
               },
               loadGlobalSheets: () => FirestoreManager().getAllGlobalFactsheets(),
               saveSheet: (name, screenEntries) {
-                // 'screenEntries' is typically [] from FactSheetsScreen when creating a new sheet.
-                // The actual entries to save are from _memorlyHomeState's 'entries' list.
                 if (FirebaseAuth.instance.currentUser == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('You must be logged in to save a new sheet.')),
                     );
-                    return Future.value(null); // Return a future resolving to null
+                    return Future.value(null);
                 }
-                return FirestoreManager().saveFactsheet(name, entries); // 'entries' is from _memorlyHomeState
+                return FirestoreManager().saveFactsheet(name, entries);
               },
               deleteSheet: (sheetId) async {
                 if (FirebaseAuth.instance.currentUser == null) {
@@ -519,36 +517,33 @@ Widget _buildFileControls() => Wrap(
                 return FirestoreManager().renameFactsheet(sheetId, newName);
               },
               openSheetInEditor: (FactSheet sheetToLoad) async {
-                // This callback handles both user sheets and global sheets.
-                // It will update the main _memorlyHomeState.entries list.
-                final List<Entry> sheetEntries;
+                final List<Map<String, String>> sheetEntriesToLoad; // Changed type to match 'entries'
                 if (sheetToLoad.isGlobal) {
-                  sheetEntries = await FirestoreManager().getEntriesFromGlobalFactsheet(sheetToLoad.id);
+                  sheetEntriesToLoad = await FirestoreManager().getEntriesFromGlobalFactsheet(sheetToLoad.id);
                 } else {
-                  // For user sheets, ensure they are logged in, though FactSheetsScreen might prevent selection if not.
                   if (FirebaseAuth.instance.currentUser == null) {
                      ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Login required to load your sheets into editor.')),
                      );
                      return;
                   }
-                  sheetEntries = await FirestoreManager().getEntriesFromFactsheet(sheetToLoad.id);
+                  sheetEntriesToLoad = await FirestoreManager().getEntriesFromFactsheet(sheetToLoad.id);
                 }
-                
+
                 setState(() {
-                  entries.clear(); // 'this.entries' refers to _memorlyHomeState.entries
-                  entries.addAll(sheetEntries);
+                  entries.clear();
+                  entries.addAll(sheetEntriesToLoad); // Use addAll with the correct type
                   status = sheetToLoad.isGlobal ? 'Viewing Global: ${sheetToLoad.name}' : 'Editing: ${sheetToLoad.name}';
-                  currentPath = null; 
-                  saved = true; // Consider it "saved" as it's loaded from a source
+                  currentPath = null;
+                  saved = true;
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('"${sheetToLoad.name}" displayed with ${sheetEntries.length} entries.')),
+                      SnackBar(content: Text('"${sheetToLoad.name}" displayed with ${sheetEntriesToLoad.length} entries.')),
                     );
                   }
                 });
               },
-              // REMOVED toggleShareSheet from here
+              areMainEntriesEmpty: entries.isEmpty, // <-- Pass the boolean state here
             ),
           ),
         );
@@ -559,7 +554,6 @@ Widget _buildFileControls() => Wrap(
       onPressed: entries.isEmpty
           ? null
           : () async {
-              // ... (your existing Start Drill logic) ...
               final drillEntries = List<Map<String, String>>.from(entries);
               await Navigator.push(
                 context,
@@ -588,9 +582,9 @@ Widget _buildFileControls() => Wrap(
     ),
     ElevatedButton(
       onPressed: () {
-        // TODO: implement extra action
+        _generateTestFile(); // Call the test file generation
       },
-      child: Text('Extra button'),
+      child: Text('Test file'), // Changed text
     ),
     ElevatedButton(
       onPressed: _showAboutPage,
@@ -598,12 +592,12 @@ Widget _buildFileControls() => Wrap(
     ),
   ],
 );
-      
+
   Widget _buildManualEntry() => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(status == 'Editing' && editingIndex != null ? 'Edit Entry:' : 'Manual Entry:'),
-      
+
       // Question field (now full width)
       TextField(
         controller: newQCtrl,
@@ -614,9 +608,9 @@ Widget _buildFileControls() => Wrap(
           FocusScope.of(context).requestFocus(answerFocusNode);
         },
       ),
-      
+
       SizedBox(height: 8),
-      
+
       // Answer field (now full width)
       TextField(
         controller: newACtrl,
@@ -629,13 +623,13 @@ Widget _buildFileControls() => Wrap(
           } else {
             _addEntry();
             // Focus back to the question field for the next entry
-            FocusScope.of(context).requestFocus(questionFocusNode);
+            // FocusScope.of(context).requestFocus(questionFocusNode); // Keep focus on Answer
           }
         },
       ),
-      
+
       SizedBox(height: 8),
-      
+
       Row(children: [
         if (status == 'Editing' && editingIndex != null) ...[
           ElevatedButton(
@@ -662,7 +656,7 @@ Widget _buildFileControls() => Wrap(
 
           SizedBox(width: 8),
           ElevatedButton(
-               onPressed: _copyToClipboard,
+               onPressed: entries.isEmpty ? null : _copyToClipboard, // Disable if entries is empty
       child: Text('Copy to Clipboard'),
           ),
 
@@ -735,7 +729,7 @@ Future<void> _copyToClipboard() async {
       }
 
       if (choice == 'lineByLine') {
-        textToCopy = entries.map((e) => '${e['q']}\n${e['a']}').join('\n'); // Added extra newline for better separation of pairs
+        textToCopy = entries.map((e) => '${e['q']}\n${e['a']}').join('\n\n'); // Changed to double newline for better separation
       } else { // 'removeCommas'
         textToCopy = entries.map((e) {
           String question = e['q']!.replaceAll(',', ' '); // Replace comma with space
@@ -769,7 +763,7 @@ Future<void> _copyToClipboard() async {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Word List:', 
+            'Word List:',
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           Text('${entries.length} entries'),
@@ -790,16 +784,16 @@ Future<void> _copyToClipboard() async {
                   child: ListTile(
                     title: Row(
                       children: [
-                        Text('${index + 1}. ', 
+                        Text('${index + 1}. ',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                         Expanded(
                           flex: 1,
-                          child: Text(entry['q']!, 
+                          child: Text(entry['q']!,
                             overflow: TextOverflow.ellipsis),
                         ),
                         Text(' → ', style: TextStyle(fontWeight: FontWeight.bold)),
                         Expanded(
-                          flex: 1, 
+                          flex: 1,
                           child: Text(entry['a']!,
                             overflow: TextOverflow.ellipsis),
                         ),
@@ -818,7 +812,7 @@ Future<void> _copyToClipboard() async {
   );
 
   Future<void> _newFile() async {
-    if (!saved) {
+    if (!saved && entries.isNotEmpty) { // Only show dialog if not saved AND entries exist
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -835,11 +829,11 @@ Future<void> _copyToClipboard() async {
     setState(() {
       entries.clear();
       currentPath = null;
-      saved = false;
+      saved = true; // A new file is initially "saved" in the sense that there are no unsaved changes to it
       editingIndex = null;
       newQCtrl.clear();
       newACtrl.clear();
-      status = 'New';
+      status = 'New'; // Ensure status is 'New'
     });
   }
 
@@ -870,10 +864,8 @@ Future<void> _copyToClipboard() async {
 
       // --- Format Detection ---
       bool isCommaSeparatedFormat = true;
-      if (lines.isNotEmpty) { // Check only if there are lines
+      if (lines.isNotEmpty) {
         for (String line in lines) {
-          // A line is considered comma-separated if it has exactly one comma,
-          // and that comma is not at the beginning or end.
           int commaCount = ','.allMatches(line).length;
           if (commaCount != 1 || line.startsWith(',') || line.endsWith(',')) {
             isCommaSeparatedFormat = false;
@@ -881,22 +873,14 @@ Future<void> _copyToClipboard() async {
           }
         }
       } else {
-        isCommaSeparatedFormat = false; // No lines, so not comma-separated.
+        isCommaSeparatedFormat = false;
       }
-      // If there's only one line and it doesn't have a comma, it's not comma-separated.
-      // Also, if it's a single line with a comma, it IS comma-separated.
-      // If it's a single line without a comma, it cannot be the Q/A newline format either (needs 2 lines).
-      // So, if lines.length == 1 and !isCommaSeparatedFormat, it means it's an invalid single line.
       if (lines.length == 1 && !lines[0].contains(',')) {
-           // Not comma-separated, and not enough lines for Q/A format.
-           // We can let the original logic handle this, which will likely result in "No valid Q&A pairs".
-           // Or, specifically flag it here if preferred. For now, let the existing logic catch it.
-           isCommaSeparatedFormat = false; // Treat as original format for parsing attempt
+           isCommaSeparatedFormat = false;
       }
 
 
-      // Ask user if they want to append or replace
-      bool? shouldReplaceNullable = await showDialog<bool>( // Make it nullable
+      bool? shouldReplaceNullable = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text('Paste from Clipboard'),
@@ -910,11 +894,14 @@ Future<void> _copyToClipboard() async {
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text('Replace'),
             ),
+             TextButton( // Added Cancel button
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: Text('Cancel'),
+            ),
           ],
         ),
       );
 
-      // If user cancels the dialog, shouldReplaceNullable will be null.
       if (shouldReplaceNullable == null) {
         if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -933,20 +920,15 @@ Future<void> _copyToClipboard() async {
         print("Parsing as comma-separated format.");
         for (String line in lines) {
           List<String> parts = line.split(',');
-          // This check is somewhat redundant due to the earlier format detection,
-          // but good for safety. The earlier check ensures parts.length is exactly 2.
           if (parts.length == 2) {
             String question = parts[0].trim();
             String answer = parts[1].trim();
             if (question.isNotEmpty && answer.isNotEmpty) {
               newEntries.add({'q': question, 'a': answer});
             } else {
-              // Empty q or a after trim, might be an "error" or just skipped
               hasParsingErrors = true;
             }
           } else {
-            // This case should ideally not be reached if isCommaSeparatedFormat is true
-            // due to the stricter check upfront.
             hasParsingErrors = true;
           }
         }
@@ -954,20 +936,17 @@ Future<void> _copyToClipboard() async {
         print("Parsing as question-per-line format.");
         for (int i = 0; i < lines.length; i += 2) {
           if (i + 1 >= lines.length) {
-            hasParsingErrors = true; // Odd number of lines
+            hasParsingErrors = true;
             continue;
           }
-          String question = lines[i]; // Already trimmed
-          String answer = lines[i + 1]; // Already trimmed
-          
-          // Skip if question or answer became empty after trimming (original lines might have been just whitespace)
-          // The initial filter `where((line) => line.isNotEmpty)` already handles fully empty lines.
-          // This check is for lines that were e.g. "  " and became "" after trim().
+          String question = lines[i];
+          String answer = lines[i + 1];
+
           if (question.isEmpty || answer.isEmpty) {
-              hasParsingErrors = true; // Consider it a parsing issue if a Q or A is missing
+              hasParsingErrors = true;
               continue;
           }
-          
+
           newEntries.add({'q': question, 'a': answer});
         }
       }
@@ -984,84 +963,93 @@ Future<void> _copyToClipboard() async {
       if (mounted) {
         setState(() {
           if (shouldReplace) {
-            entries = newEntries;
+            entries.clear(); // Clear existing entries if replacing
+            entries.addAll(newEntries);
           } else {
             entries.addAll(newEntries);
           }
           saved = false;
-          status = 'Editing'; // Or update based on whether entries were empty before
+          status = 'Editing';
         });
 
-        String message = '${shouldReplace ? 'Pasted' : 'Appended'} ${newEntries.length} entries from clipboard';
+        String message = '${shouldReplace ? 'Replaced with' : 'Appended'} ${newEntries.length} entries from clipboard'; // Message improved
         print(entries.length);
         print("tu9 - after paste");
-            
+
         if (hasParsingErrors) {
           message += ' (some lines may not have been processed correctly)';
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
         );
       }
 
     } catch (e) {
-      if (mounted) { // Check if the widget is still in the tree before showing SnackBar
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error pasting from clipboard: $e')),
         );
       }
     }
   }
- 
- 
+
+
   void _addEntry() {
-    if (newQCtrl.text.isEmpty || newACtrl.text.isEmpty) return;
+    if (newQCtrl.text.trim().isEmpty || newACtrl.text.trim().isEmpty) { // Used trim()
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Question and Answer cannot be empty.')),
+        );
+      return;
+    }
     setState(() {
-      entries.add({'q': newQCtrl.text, 'a': newACtrl.text});
-          
+      entries.add({'q': newQCtrl.text.trim(), 'a': newACtrl.text.trim()}); // Used trim()
+
                 print(entries.length);
                 print("tu10");
-                
+
 
       newQCtrl.clear();
       newACtrl.clear();
       saved = false;
-      
-      // Request focus back to the question field
-      FocusScope.of(context).requestFocus(questionFocusNode);
+
+      FocusScope.of(context).requestFocus(questionFocusNode); // Keep focus on Question for next new entry
     });
   }
 
-  void _nextEntry() {
+  void _nextEntry() { // This function seems redundant if _cancelEdit does the same
     setState(() {
       newQCtrl.clear();
       newACtrl.clear();
       editingIndex = null;
-      
-      // Focus the question field when clearing for next entry
+
       FocusScope.of(context).requestFocus(questionFocusNode);
     });
   }
 
   void _editEntry(int index) {
     setState(() {
+      status = 'Editing'; // Ensure status is 'Editing'
       editingIndex = index;
       newQCtrl.text = entries[index]['q']!;
       newACtrl.text = entries[index]['a']!;
-      
-      // Focus on question field when editing
+
       FocusScope.of(context).requestFocus(questionFocusNode);
     });
   }
 
   void _updateEntry() {
-    if (editingIndex == null || newQCtrl.text.isEmpty || newACtrl.text.isEmpty) return;
+    if (editingIndex == null || newQCtrl.text.trim().isEmpty || newACtrl.text.trim().isEmpty) { // Used trim()
+      ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Question and Answer cannot be empty for update.')),
+        );
+      return;
+    }
     setState(() {
-      entries[editingIndex!] = {'q': newQCtrl.text, 'a': newACtrl.text};
+      entries[editingIndex!] = {'q': newQCtrl.text.trim(), 'a': newACtrl.text.trim()}; // Used trim()
       saved = false;
     });
-    _cancelEdit();
+    _cancelEdit(); // Resets form and focus
   }
 
   void _deleteEntry() {
@@ -1070,32 +1058,58 @@ Future<void> _copyToClipboard() async {
       entries.removeAt(editingIndex!);
       saved = false;
     });
-    _cancelEdit();
+    _cancelEdit(); // Resets form and focus
   }
 
   void _generateTestFile() {
+    if (!saved && entries.isNotEmpty) { // Check for unsaved changes
+       showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: Text('Unsaved Changes'),
+          content: Text('You have unsaved changes. Generating a test file will clear them. Proceed?'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('No')),
+            TextButton(onPressed: () {
+              Navigator.of(ctx).pop(true);
+              _performGenerateTestFile(); // Call generation after dialog
+            }, child: Text('Yes')),
+          ],
+        ),
+      ).then((proceed) {
+        if (proceed != true) return; // If user chose No or dismissed
+      });
+    } else {
+      _performGenerateTestFile(); // No unsaved changes or entries are empty, proceed directly
+    }
+  }
+
+  void _performGenerateTestFile() { // Actual generation logic
     setState(() {
+      entries.clear(); // Clear existing entries
       for (int i = 1; i <= 30; i++) {
         entries.add({
-          'q': '$i + $i',
-          'a': '${i * 2}',
+          'q': 'Q$i: What is $i + $i?',
+          'a': 'A$i: It is ${i * 2}.',
         });
       }
-      saved = false;
-      status = 'Editing';
+      saved = false; // New content, not saved yet
+      status = 'Editing'; // Set status to editing
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Generated 30 test entries')),
-    );
+    if(mounted){
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Generated 30 new test entries and cleared previous.')),
+      );
+    }
   }
+
 
   void _cancelEdit() {
     setState(() {
       editingIndex = null;
       newQCtrl.clear();
       newACtrl.clear();
-      
-      // Reset focus to question field when canceling edit
+      // status remains 'Editing' or 'New' unless explicitly changed by another action
       FocusScope.of(context).requestFocus(questionFocusNode);
     });
   }
