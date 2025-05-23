@@ -19,7 +19,7 @@ import 'settings.dart'; // Import your Settings class
 import 'entry_editor_screen.dart';
 
 // Full version string, can be used in About/Help screen
-final String fullVersionString = 'Memorly v.0.9.0 beta - 250522';
+final String fullVersionString = 'Memorly v.0.9.1 beta - 2505222319';
 // Shortened title for AppBar
 final String appTitle = 'Memorly';
 

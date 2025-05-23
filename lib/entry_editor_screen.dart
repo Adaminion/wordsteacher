@@ -151,6 +151,199 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
     return false; // Prevent default pop, already handled by explicit Navigator.pop
   }
 
+  Future<void> _copyAllToClipboard() async {
+    if (_currentEntries.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No entries to copy.')),
+        );
+      }
+      return;
+    }
+
+    // Ask user for preferred format if entries contain commas, or default to Q,A
+    bool hasCommasInEntries = false;
+    for (var entry in _currentEntries) {
+      if (entry['q']!.contains(',') || entry['a']!.contains(',')) {
+        hasCommasInEntries = true;
+        break;
+      }
+    }
+
+    String textToCopy;
+
+    if (hasCommasInEntries) {
+      final choice = await showDialog<String>(
+        context: context,
+        barrierDismissible: false, // User must choose an option
+        builder: (ctx) => AlertDialog(
+          title: const Text('Commas Detected in Entries'),
+          content: const Text('Your entries contain commas. How would you like to format the text for the clipboard?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Line by Line (Q then A)'),
+              onPressed: () => Navigator.of(ctx).pop('lineByLine'),
+            ),
+            TextButton(
+              child: const Text('Remove Commas (Q,A)'),
+              onPressed: () => Navigator.of(ctx).pop('removeCommas'),
+            ),
+             TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.of(ctx).pop('cancel'),
+            ),
+          ],
+        ),
+      );
+
+      if (choice == null || choice == 'cancel') {
+         if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Copy operation cancelled.')),
+          );
+        }
+        return;
+      }
+
+      if (choice == 'lineByLine') {
+        textToCopy = _currentEntries.map((e) => '${e['q']}\n${e['a']}').join('\n\n');
+      } else { // removeCommas
+        textToCopy = _currentEntries.map((e) {
+          String question = e['q']!.replaceAll(',', ' ');
+          String answer = e['a']!.replaceAll(',', ' ');
+          return '$question,$answer';
+        }).join('\n');
+      }
+    } else {
+      // Default format: Q,A
+      textToCopy = _currentEntries.map((e) => '${e['q']},${e['a']}').join('\n');
+    }
+
+
+    if (textToCopy.isNotEmpty) {
+      await Clipboard.setData(ClipboardData(text: textToCopy));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Copied ${_currentEntries.length} entries to clipboard.')),
+        );
+      }
+    } else if (mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Nothing was copied to clipboard.')),
+        );
+    }
+  }
+
+  Future<void> _pasteIntoEditor() async {
+    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+    if (!mounted) return; 
+
+    if (clipboardData == null || clipboardData.text == null || clipboardData.text!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clipboard is empty.')));
+      return;
+    }
+
+    String text = clipboardData.text!;
+    List<String> rawLines = text.split('\n');
+    List<String> lines = rawLines.map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+
+    if (lines.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clipboard contains no processable content.')));
+      return;
+    }
+
+    bool isCommaSeparated = lines.every((line) {
+        int commaCount = ','.allMatches(line).length;
+        return commaCount == 1 && !line.startsWith(',') && !line.endsWith(',');
+    });
+
+
+    List<Map<String, String>> pastedEntries = [];
+    bool parsingError = false;
+
+    if (isCommaSeparated) {
+      for (String line in lines) {
+        final parts = line.split(',');
+        if (parts.length == 2 && parts[0].trim().isNotEmpty && parts[1].trim().isNotEmpty) {
+          pastedEntries.add({'q': parts[0].trim(), 'a': parts[1].trim()});
+        } else {
+          parsingError = true;
+        }
+      }
+    } else {
+      // Try Q/A on separate lines
+      for (int i = 0; i < lines.length; i += 2) {
+        if (i + 1 < lines.length && lines[i].trim().isNotEmpty && lines[i+1].trim().isNotEmpty) {
+          pastedEntries.add({'q': lines[i].trim(), 'a': lines[i+1].trim()});
+        } else {
+          parsingError = true;
+        }
+      }
+    }
+
+    if (pastedEntries.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not parse valid entries from clipboard.')));
+       return;
+    }
+
+    final choice = await showDialog<String>( 
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Paste Entries'),
+        content: Text('Found ${pastedEntries.length} entries. Append to current list or replace all?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, 'append'), child: const Text('Append')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, 'replace'), child: const Text('Replace All')),
+        ],
+      ),
+    );
+
+    if (!mounted || choice == null || choice == 'cancel') return;
+
+    setState(() {
+      if (choice == 'replace') {
+        _currentEntries.clear();
+         _editingIndex = null; 
+        _qController.clear();
+        _aController.clear();
+      }
+      _currentEntries.addAll(pastedEntries);
+      _hasChanges = true;
+    });
+
+    String feedback = '${choice == 'replace' ? 'Replaced with' : 'Appended'} ${pastedEntries.length} entries.';
+    if (parsingError) feedback += ' Some lines may not have been processed correctly.';
+    if(mounted) {
+       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(feedback)));
+    }
+  }
+
+  void _swapAllQA() {
+    if (_currentEntries.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No entries to swap.')),
+      );
+      return;
+    }
+    setState(() {
+      for (int i = 0; i < _currentEntries.length; i++) {
+        final String tempQ = _currentEntries[i]['q']!;
+        _currentEntries[i]['q'] = _currentEntries[i]['a']!;
+        _currentEntries[i]['a'] = tempQ;
+      }
+      _hasChanges = true;
+      // If currently editing an entry, update the text fields as well
+      if (_editingIndex != null) {
+          _qController.text = _currentEntries[_editingIndex!]['q']!;
+          _aController.text = _currentEntries[_editingIndex!]['a']!;
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Swapped Q&A for ${_currentEntries.length} entries.')),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -161,15 +354,24 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
           title: Text('Edit: ${widget.sheetName}'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.paste_outlined), // Changed icon
+              icon: const Icon(Icons.copy_all_outlined),
+              tooltip: 'Copy All to Clipboard',
+              onPressed: _copyAllToClipboard,
+            ),
+            IconButton(
+              icon: const Icon(Icons.content_paste_go_outlined), 
               tooltip: 'Paste from Clipboard',
               onPressed: _pasteIntoEditor,
             ),
             IconButton(
-              icon: const Icon(Icons.done_all), // Changed icon
+              icon: const Icon(Icons.swap_horiz_outlined),
+              tooltip: 'Swap All Q&A',
+              onPressed: _swapAllQA,
+            ),
+            IconButton(
+              icon: const Icon(Icons.check_circle_outline), 
               tooltip: 'Save & Close',
               onPressed: () {
-                // Return the modified list (or original if no changes)
                 Navigator.pop(context, _currentEntries);
               },
             ),
@@ -221,14 +423,14 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
                   TextButton(onPressed: _cancelEdit, child: const Text('Cancel Edit')),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
-                    icon: const Icon(Icons.save_as), // Changed icon
-                    label: const Text('Update Entry'), // Corrected parameter: label instead of child
+                    icon: const Icon(Icons.edit_note_outlined), // Changed icon
+                    label: const Text('Update Entry'), 
                     onPressed: _updateEntry,
                   ),
                 ] else ...[
                   ElevatedButton.icon(
-                    icon: const Icon(Icons.add_circle_outline), // Changed icon
-                    label: const Text('Add Entry'), // Corrected parameter: label instead of child
+                    icon: const Icon(Icons.add_task_outlined), // Changed icon
+                    label: const Text('Add Entry'), 
                     onPressed: _addEntry,
                   ),
                 ],
@@ -242,12 +444,12 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
 
    Widget _buildEntryListHeader() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0, right: 4.0), // Added some horizontal padding
+      padding: const EdgeInsets.only(bottom: 8.0, left: 4.0, right: 4.0), 
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text('Entries In This Sheet:', style: Theme.of(context).textTheme.titleSmall), // Changed style
-          Text('${_currentEntries.length} entr${_currentEntries.length == 1 ? "y" : "ies"}', style: Theme.of(context).textTheme.bodySmall), // Changed style
+          Text('Entries In This Sheet:', style: Theme.of(context).textTheme.titleSmall), 
+          Text('${_currentEntries.length} entr${_currentEntries.length == 1 ? "y" : "ies"}', style: Theme.of(context).textTheme.bodySmall), 
         ],
       ),
     );
@@ -259,7 +461,7 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(16.0),
-          child: Text('No entries yet. Add some using the form above!', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
+          child: Text('No entries yet. Add some using the form above or paste from clipboard!', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontStyle: FontStyle.italic)),
         )
       );
     }
@@ -269,33 +471,33 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
         final entry = _currentEntries[index];
         final isEditingThis = _editingIndex == index;
         return Card(
-          elevation: isEditingThis ? 4 : 2, // Adjusted elevation
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), // Added rounded corners
+          elevation: isEditingThis ? 4 : 2, 
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)), 
           color: isEditingThis ? Theme.of(context).primaryColorLight.withOpacity(0.3) : Theme.of(context).cardColor,
-          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 0), // Adjusted margin
+          margin: const EdgeInsets.symmetric(vertical: 5, horizontal: 0), 
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Adjusted padding
+            contentPadding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), 
             title: Text(
               '${index + 1}. ${entry['q']}',
               style: TextStyle(
                 fontWeight: isEditingThis ? FontWeight.bold : FontWeight.normal,
                 color: isEditingThis ? Theme.of(context).primaryColorDark : null,
               ),
-              maxLines: 2, // Allow title to wrap
+              maxLines: 2, 
               overflow: TextOverflow.ellipsis,
             ),
             subtitle: Padding(
               padding: const EdgeInsets.only(top: 4.0),
               child: Text(
                 entry['a']!,
-                maxLines: 3, // Allow subtitle to wrap more
+                maxLines: 3, 
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(color: Colors.grey[700]),
               ),
             ),
             onTap: () => _startEditEntry(index),
             trailing: IconButton(
-              icon: Icon(Icons.delete_forever_outlined, color: Colors.red.shade700), // Changed icon
+              icon: Icon(Icons.delete_outline, color: Colors.red.shade700), // Changed icon
               tooltip: 'Delete Entry',
               onPressed: () => _deleteEntry(index),
             ),
@@ -303,88 +505,5 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
         );
       },
     );
-  }
-
-  Future<void> _pasteIntoEditor() async {
-    final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
-    if (!mounted) return; // Check if widget is still in the tree
-
-    if (clipboardData == null || clipboardData.text == null || clipboardData.text!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clipboard is empty.')));
-      return;
-    }
-
-    String text = clipboardData.text!;
-    List<String> rawLines = text.split('\n');
-    List<String> lines = rawLines.map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
-
-    if (lines.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Clipboard contains no processable content.')));
-      return;
-    }
-
-    bool isCommaSeparated = lines.every((line) {
-        int commaCount = ','.allMatches(line).length;
-        return commaCount == 1 && !line.startsWith(',') && !line.endsWith(',');
-    });
-
-
-    List<Map<String, String>> pastedEntries = [];
-    bool parsingError = false;
-
-    if (isCommaSeparated) {
-      for (String line in lines) {
-        final parts = line.split(',');
-        if (parts.length == 2 && parts[0].trim().isNotEmpty && parts[1].trim().isNotEmpty) {
-          pastedEntries.add({'q': parts[0].trim(), 'a': parts[1].trim()});
-        } else {
-          parsingError = true;
-        }
-      }
-    } else {
-      for (int i = 0; i < lines.length; i += 2) {
-        if (i + 1 < lines.length && lines[i].trim().isNotEmpty && lines[i+1].trim().isNotEmpty) {
-          pastedEntries.add({'q': lines[i].trim(), 'a': lines[i+1].trim()});
-        } else {
-          parsingError = true;
-        }
-      }
-    }
-
-    if (pastedEntries.isEmpty) {
-       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not parse valid entries from clipboard.')));
-       return;
-    }
-
-    // Corrected type for showDialog
-    final choice = await showDialog<String>( // Changed type to String
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Paste Entries'),
-        content: Text('Found ${pastedEntries.length} entries. Append to current list or replace all?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, 'cancel'), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, 'append'), child: const Text('Append')),
-          ElevatedButton(onPressed: () => Navigator.pop(ctx, 'replace'), child: const Text('Replace All')),
-        ],
-      ),
-    );
-
-    if (!mounted || choice == null || choice == 'cancel') return;
-
-    setState(() {
-      if (choice == 'replace') {
-        _currentEntries.clear();
-         _editingIndex = null; // Clear editing state if replacing all
-        _qController.clear();
-        _aController.clear();
-      }
-      _currentEntries.addAll(pastedEntries);
-      _hasChanges = true;
-    });
-
-    String feedback = '${choice == 'replace' ? 'Replaced with' : 'Appended'} ${pastedEntries.length} entries.';
-    if (parsingError) feedback += ' Some lines may not have been processed correctly.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(feedback)));
   }
 }
