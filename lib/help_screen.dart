@@ -10,7 +10,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Help & About    -    $wersja'),
+        title: Text('Memorly  - Help & About'),
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16),

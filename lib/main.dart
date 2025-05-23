@@ -1,41 +1,49 @@
-// © Adaminion 2025  2505211730
+// © Adaminion 2025 2505220950
 
 import 'dart:math';
 import 'study_screen.dart';
 import 'firestore_manager.dart';
-//imimport 'package:firebaseim_storage/firebase_storage.dart';
+//import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'fact_sheets_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 //import 'package:cloud_firestore/cloud_firestore.dart' as firestore;
-import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:shared_preferences/shared_preferences.dart'; // No longer needed directly here for test settings
 import 'firebase_options.dart';
 import 'auth_screen.dart';
 import 'help_screen.dart';
 import 'options_screen.dart';
-import 'settings.dart';
-//import 'storage_manager.dart';
-final String wersja = 'Memorly  v.0.8.7 beta    - 2505211340';
+import 'settings.dart'; // Import your Settings class
+import 'entry_editor_screen.dart';
 
-bool showBanner = true;
+// Full version string, can be used in About/Help screen
+final String fullVersionString = 'Memorly v.0.9.0 beta - 250522';
+// Shortened title for AppBar
+final String appTitle = 'Memorly';
+
+// Set to false by default as AppBar will now handle persistent status
+bool showBanner = false;
+
+// Access the global Settings instance
+final Settings appSettings = Settings();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final DateTime expirationDate = DateTime(2025, 6, 1); // June 1, 2025
   final DateTime currentDate = DateTime.now();
-   if (currentDate.isAfter(expirationDate)) {
-    // Run an expired app version that shows an expiration message
+  if (currentDate.isAfter(expirationDate)) {
     runApp(const ExpiredApp());
     return;
   }
 
   await Firebase.initializeApp(
-
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  await Settings().load();
+  // Load settings at startup
+  await appSettings.load();
   runApp(const MyApp());
 }
 
@@ -43,53 +51,45 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
- @override
-Widget build(BuildContext ctx) => MaterialApp(
-  title: wersja,
-  debugShowCheckedModeBanner: false,
-  theme: ThemeData(
-    primarySwatch: Colors.green,
-    // Main background color - a very light lime/yellow
-    scaffoldBackgroundColor: const Color(0xFFF7F9D9),
-    // Card and form field colors - slightly different shade for contrast
-    cardColor: const Color(0xFFEFF2C0),
-    // Input decorations for text fields
-    inputDecorationTheme: InputDecorationTheme(
-      fillColor: const Color(0xFFEFF2C0),
-      filled: true,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.green.shade300),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.green.shade600, width: 2),
-      ),
-    ),
-    // Button theme with green colors
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green.shade500,
-        foregroundColor: Colors.white,
-      ),
-    ),
-    // Text button theme
-    textButtonTheme: TextButtonThemeData(
-      style: TextButton.styleFrom(
-        foregroundColor: Colors.green.shade700,
-      ),
-    ),
-    // App bar theme
-    appBarTheme: AppBarTheme(
-      backgroundColor: const Color(0xFFD9E5A7),
-      foregroundColor: Colors.green.shade900,
-      elevation: 0,
-    ),
-  ),
-  home: const memorlyHome(),
-);
+  Widget build(BuildContext ctx) => MaterialApp(
+        title: appTitle,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          scaffoldBackgroundColor: const Color(0xFFF7F9D9),
+          cardColor: const Color(0xFFEFF2C0),
+          inputDecorationTheme: InputDecorationTheme(
+            fillColor: const Color(0xFFEFF2C0),
+            filled: true,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.green.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.green.shade600, width: 2),
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade500,
+              foregroundColor: Colors.white,
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green.shade700,
+            ),
+          ),
+          appBarTheme: AppBarTheme(
+            backgroundColor: const Color(0xFFD9E5A7),
+            foregroundColor: Colors.green.shade900,
+            elevation: 0,
+          ),
+        ),
+        home: const MemorlyHome(),
+      );
 }
-
 
 class ExpiredApp extends StatelessWidget {
   const ExpiredApp({super.key});
@@ -147,543 +147,445 @@ class ExpiredApp extends StatelessWidget {
   }
 }
 
-class memorlyHome extends StatefulWidget {
-  const memorlyHome({super.key});
+class MemorlyHome extends StatefulWidget {
+  const MemorlyHome({super.key});
 
   @override
-  _memorlyHomeState createState() => _memorlyHomeState();
+  _MemorlyHomeState createState() => _MemorlyHomeState();
 }
 
-class _memorlyHomeState extends State<memorlyHome> {
+class _MemorlyHomeState extends State<MemorlyHome> {
+  List<Map<String, String>> entries = [];
+  bool get isUserLoggedIn => FirebaseAuth.instance.currentUser != null;
 
-    List<Map<String, String>> entries = [];
-   bool get isUserLoggedIn => FirebaseAuth.instance.currentUser != null;
-
-  TextEditingController newQCtrl = TextEditingController();
-  TextEditingController newACtrl = TextEditingController();
-  FocusNode questionFocusNode = FocusNode();
-  FocusNode answerFocusNode = FocusNode();
   bool saved = true;
   String status = 'Idle';
-  int? editingIndex;
-  String? currentPath;
+  String? currentSheetName;
 
-  // ADD THE initState METHOD RIGHT HERE, between the variable declarations and dispose method
   @override
   void initState() {
     super.initState();
-
-    // Add this listener to update UI when auth state changes
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       if (mounted) {
         setState(() {
-          // This forces a UI refresh when authentication state changes
+          if (user == null) {
+            entries.clear();
+            status = 'Idle';
+            saved = true;
+            currentSheetName = null;
+          } else {
+            status = 'Idle';
+          }
         });
       }
     });
   }
-  // Make sure to dispose focus nodes when widget is disposed
 
-  // Make sure to dispose focus nodes when widget is disposed
   @override
   void dispose() {
-    newQCtrl.dispose();
-    newACtrl.dispose();
-    questionFocusNode.dispose();
-    answerFocusNode.dispose();
     super.dispose();
   }
-  @override
 
-
-
-  Future<String?> _promptFilename() async {
-
-                print(entries.length);
-                print('tu8e');
-    return await showDialog<String>(
-      context: context,
-      builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: Text('Save As'),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(labelText: 'Filename'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-              child: Text('OK'),
-            ),
-          ],
-        );
-      },
-    );
+  String _buildAppBarStatusText() {
+    String contextName = currentSheetName ?? "In Memory";
+    if (status.startsWith("Viewing Global:")) {
+      contextName = status.replaceFirst("Viewing Global: ", "");
+    } else if (status.startsWith("Loaded:")) {
+      contextName = status.replaceFirst("Loaded: ", "");
+    } else if (status.startsWith("Editing:") && currentSheetName != null) {
+       contextName = currentSheetName!;
+    } else if (status == 'New' || entries.isEmpty && currentSheetName == null) {
+      contextName = "New Session";
+    }
+    else if (status == 'Editing' && currentSheetName != null) {
+      contextName = currentSheetName!;
+    } else if (status == 'Editing' && entries.isNotEmpty) {
+      contextName = "Current Session";
+    }
+    return '$contextName | ${entries.length} entr${entries.length == 1 ? "y" : "ies"} | ${saved ? "Saved" : "Unsaved"}';
   }
 
-  @override
-  Widget build(BuildContext ctx) => Scaffold(
-    appBar: AppBar(
-  title: Text(wersja),
-  actions: [
-    StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (ctx, snap) {
-        final user = snap.data;
-        return IconButton(
-          icon: user == null
-              ? Icon(Icons.person_add, color: Colors.grey, size:32)  //i
-              : (user.photoURL != null && user.photoURL!.isNotEmpty
-                  ? CircleAvatar(
-                      radius: 28, //TU kicius zmienia rozmiar - buylo 16
-                      backgroundImage: NetworkImage(user.photoURL!),
-                    )
-                  : CircleAvatar(
-                      radius: 28, //i tu
-                      child: Icon(Icons.person),
-                    )),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => AuthScreen()),
-            );
-          },
-        );
-      },
-    ),
-    if (isUserLoggedIn) // This checks if user is logged in
-      IconButton(
-        icon: Icon(Icons.logout),
-        onPressed: () async {
-          await FirebaseAuth.instance.signOut();
-          setState(() {
-            // Refresh the UI
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Logged out successfully')),
-          );
-        },
-      ),
-  ],
-),
-    body: Column(
-      children: [
-if (showBanner)
-  MaterialBanner(
-    padding: EdgeInsets.all(10),
-    content: Row(
-      children: [
-        Icon(
-          status == 'Editing' ? Icons.edit :
-          status == 'New' ? Icons.add_circle :
-          status == 'Idle' ? Icons.pause :
-          Icons.info_outline,
-          color: Colors.blue.shade700,
-        ),
-        SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            'Status: $status | Entries: ${entries.length} | ${saved ? 'Saved' : 'Unsaved'}',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-      ],
-    ),
-    backgroundColor: Colors.blue.shade50,
-    leadingPadding: EdgeInsets.zero,
-    actions: [
-      TextButton(
-        onPressed: () {
-          setState(() {
-            showBanner = false;
-          });
-        },
-        child: Text('Dismiss'),
-      ),
-    ],
-  ),
-        Expanded(
-          child: Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Memorly', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-                SizedBox(height: 16),
-                _buildFileControls(),
-                if (status == 'Editing')
-                  ...[
-                    SizedBox(height: 16),
-                    // Manual entry form now comes first
-                    _buildManualEntry(),
-                    SizedBox(height: 16),
-                    // Word list is placed below the form, and takes remaining space
-                    Expanded(child: _buildWordList()),
-                  ]
-                else
-                  ...[
-                    SizedBox(height: 16),
-                    Expanded(
-                      child: Center(
-                        child: Image.asset('assets/logo.png'),
-                      ),
-                    ),
-                  ],
-              ],
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-void _showAboutPage() {
-  Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => HelpScreen()),
-  );
-}
-
-
-void _showContactForm() {
-  final TextEditingController messageController = TextEditingController();
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('Contact Developer'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Send a message to the developer:'),
-            SizedBox(height: 8),
-            TextField(
-              controller: messageController,
-              decoration: InputDecoration(
-                labelText: 'Your message',
-                hintText: 'Feedback, suggestions, or questions...',
-              ),
-              maxLines: 4,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // Here you would send the message
-              // This could connect to Firebase, send an email, etc.
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Message sent! Thank you for your feedback.')),
-              );
-              Navigator.of(context).pop();
-              Navigator.of(context).pop(); // Close both dialogs
-            },
-            child: Text('Send'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-  void updateStatus(String s) {
+  void _updateStatus(String newStatus, {String? sheetName}) {
     setState(() {
-      status = s;
-      if (s != 'Editing') {
-        editingIndex = null;
-        newQCtrl.clear();
-        newACtrl.clear();
+      status = newStatus;
+      if (sheetName != null) {
+        currentSheetName = sheetName;
+      } else if (newStatus == 'New' || (newStatus == 'Idle' && entries.isEmpty)) {
+        currentSheetName = null;
       }
     });
   }
 
- // In main.dart -> within _memorlyHomeState class
-
-Widget _buildFileControls() => Wrap(
-  spacing: 8,
-  runSpacing: 8,
-  children: [
-    ElevatedButton(
-      onPressed: entries.isEmpty 
-      ? null 
-      : () async { // Removed entries.isEmpty check, button always enabled
-        await _newFile();
-        // updateStatus('New'); // _newFile already updates status
-      },
-      child: Text('Clear Memory'),
-    ),
-    ElevatedButton(
-      onPressed: () {
-        updateStatus('Editing');
-      },
-      child: Text('Add/Edit Entries'),
-    ),
-    ElevatedButton(
-      onPressed: entries.isEmpty
-          ? null
-          : () async {
-              // ... (your existing Start Test logic) ...
-              final prefs = await SharedPreferences.getInstance();
-              final numberOfQuestions = prefs.getInt('numberOfQuestions') ?? 0;
-              final repeatQuestions = prefs.getBool('repeatQuestions') ?? false;
-              List<Map<String, String>> testEntries = List.from(entries);
-
-              if (numberOfQuestions > 0 && entries.isNotEmpty) { // Added entries.isNotEmpty to prevent error with random.nextInt
-                if (repeatQuestions) {
-                  testEntries = [];
-                  final random = Random();
-                  for (int i = 0; i < numberOfQuestions; i++) {
-                    testEntries.add(entries[random.nextInt(entries.length)]);
-                  }
-                } else {
-                  testEntries.shuffle();
-                  testEntries = testEntries
-                      .take(min(numberOfQuestions, testEntries.length))
-                      .toList();
-                }
-              } else if (numberOfQuestions > 0 && entries.isEmpty) {
-                 // Handle case where numberOfQuestions > 0 but entries is empty, perhaps show a message
-                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('No entries available to start the test.')),
+  @override
+  Widget build(BuildContext ctx) => Scaffold(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Text(appTitle),
+              SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _buildAppBarStatusText(),
+                  style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.green.shade700),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            StreamBuilder<User?>(
+              stream: FirebaseAuth.instance.authStateChanges(),
+              builder: (ctx, snap) {
+                final user = snap.data;
+                return IconButton(
+                  icon: user == null
+                      ? Icon(Icons.person_add, color: Colors.grey.shade700, size: 32)
+                      : (user.photoURL != null && user.photoURL!.isNotEmpty
+                          ? CircleAvatar(
+                              radius: 16,
+                              backgroundImage: NetworkImage(user.photoURL!),
+                            )
+                          : CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.green.shade700,
+                              child: Icon(Icons.person, color: Colors.white, size: 20,),
+                            )),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => AuthScreen()),
+                    );
+                  },
                 );
-                return;
-              }
+              },
+            ),
+            if (isUserLoggedIn)
+              IconButton(
+                icon: Icon(Icons.logout),
+                tooltip: "Logout",
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Logged out successfully')),
+                  );
+                },
+              ),
+          ],
+        ),
+        body: Column(
+          children: [
+            if (showBanner)
+              MaterialBanner(
+                padding: EdgeInsets.all(10),
+                content: Row(
+                  children: [
+                    Icon(
+                      status == 'Editing'
+                          ? Icons.edit_note
+                          : status == 'New'
+                              ? Icons.add_circle
+                              : status == 'Idle' || status.startsWith('Loaded') || status.startsWith('Viewing')
+                                  ? Icons.pause_circle_outline
+                                  : Icons.info_outline,
+                      color: Colors.blue.shade700,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Legacy Status: $status | Entries: ${entries.length} | ${saved ? 'Saved' : 'Unsaved'}',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+                backgroundColor: Colors.blue.shade50,
+                leadingPadding: EdgeInsets.zero,
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        showBanner = false;
+                      });
+                    },
+                    child: Text('Dismiss'),
+                  ),
+                ],
+              ),
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Memorly    0.9.0 beta', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
+                    SizedBox(height: 16),
+                    _buildFileControls(),
+                    SizedBox(height: 16),
+                    Expanded(
+                      child: Center(
+                        child: Image.asset('assets/logo.png', fit: BoxFit.contain, width: MediaQuery.of(context).size.width * 0.6,),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 
+  void _showAboutPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => HelpScreen()),
+    );
+  }
 
-              await Navigator.push(
+  Widget _buildFileControls() => Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        alignment: WrapAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: entries.isEmpty && status != 'New'
+                ? null
+                : () async {
+                    await _newFile();
+                  },
+            child: Text('Clear Memory'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              String sheetNameToEdit = currentSheetName ?? (entries.isNotEmpty ? "Current Session" : "New Session");
+              if (status == 'New' && entries.isEmpty) sheetNameToEdit = "New Session";
+
+              final List<Map<String, String>>? result = await Navigator.push<List<Map<String, String>>>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => StudyScreen(
-                    entries: testEntries,
-                    mode: StudyMode.test,
+                  builder: (_) => EntryEditorScreen(
+                    initialEntries: List<Map<String, String>>.from(entries),
+                    sheetName: sheetNameToEdit,
                   ),
                 ),
               );
-              setState(() {});
-            },
-      child: Text('Start Test'),
-    ),
-    ElevatedButton(
-      // "Manage Online Files" button
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => FactSheetsScreen(
-              loadUserSheets: () async {
-                if (FirebaseAuth.instance.currentUser == null) {
-                  print("LoadUserSheets: Not logged in, returning empty list.");
-                  return [];
-                }
-                return FirestoreManager().getAllFactsheets();
-              },
-              loadGlobalSheets: () => FirestoreManager().getAllGlobalFactsheets(),
-              saveSheet: (name, screenEntries) {
-                if (FirebaseAuth.instance.currentUser == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('You must be logged in to save a new sheet.')),
-                    );
-                    return Future.value(null);
-                }
-                return FirestoreManager().saveFactsheet(name, entries);
-              },
-              deleteSheet: (sheetId) async {
-                if (FirebaseAuth.instance.currentUser == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Login required to delete sheets.')),
-                  );
-                  return false;
-                }
-                return FirestoreManager().deleteFactsheet(sheetId);
-              },
-              renameSheet: (sheetId, newName) async {
-                if (FirebaseAuth.instance.currentUser == null) {
-                   ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Login required to rename sheets.')),
-                  );
-                  return false;
-                }
-                return FirestoreManager().renameFactsheet(sheetId, newName);
-              },
-              openSheetInEditor: (FactSheet sheetToLoad) async {
-                final List<Map<String, String>> sheetEntriesToLoad; // Changed type to match 'entries'
-                if (sheetToLoad.isGlobal) {
-                  sheetEntriesToLoad = await FirestoreManager().getEntriesFromGlobalFactsheet(sheetToLoad.id);
-                } else {
-                  if (FirebaseAuth.instance.currentUser == null) {
-                     ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Login required to load your sheets into editor.')),
-                     );
-                     return;
-                  }
-                  sheetEntriesToLoad = await FirestoreManager().getEntriesFromFactsheet(sheetToLoad.id);
-                }
 
+              if (result != null) {
                 setState(() {
-                  entries.clear();
-                  entries.addAll(sheetEntriesToLoad); // Use addAll with the correct type
-                  status = sheetToLoad.isGlobal ? 'Viewing Global: ${sheetToLoad.name}' : 'Editing: ${sheetToLoad.name}';
-                  currentPath = null;
-                  saved = true;
-                  if (mounted) {
+                  entries = result;
+                  saved = false;
+                  _updateStatus('Loaded: $sheetNameToEdit', sheetName: sheetNameToEdit);
+                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('"${sheetToLoad.name}" displayed with ${sheetEntriesToLoad.length} entries.')),
+                      SnackBar(content: Text('Entries updated from editor.')),
                     );
                   }
                 });
-              },
-              areMainEntriesEmpty: entries.isEmpty, // <-- Pass the boolean state here
-            ),
+              } else {
+                 _updateStatus(status, sheetName: currentSheetName);
+              }
+            },
+            child: Text('Add/Edit Entries'),
           ),
-        );
-      },
-      child: Text('Manage Online Files'),
-    ),
-    ElevatedButton(
-      onPressed: entries.isEmpty
-          ? null
-          : () async {
-              final drillEntries = List<Map<String, String>>.from(entries);
-              await Navigator.push(
+          ElevatedButton(
+            onPressed: entries.isEmpty
+                ? null
+                : () async {
+                    // Use settings from the global appSettings instance
+                    final int numberOfQuestionsFromSettings = appSettings.numberOfQuestions;
+                    final bool repeatQuestionsFromSettings = appSettings.repeatQuestions;
+                    
+                    List<Map<String, String>> testEntries = List.from(entries);
+
+                    if (entries.isEmpty) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('No entries available to start the test.')),
+                      );
+                      return;
+                    }
+
+                    // If numberOfQuestionsFromSettings is 0, use all entries. Otherwise, use the specified number.
+                    if (numberOfQuestionsFromSettings > 0 && numberOfQuestionsFromSettings < entries.length) {
+                      if (repeatQuestionsFromSettings) {
+                        testEntries = [];
+                        final random = Random();
+                        for (int i = 0; i < numberOfQuestionsFromSettings; i++) {
+                          testEntries.add(entries[random.nextInt(entries.length)]);
+                        }
+                      } else {
+                        testEntries.shuffle();
+                        testEntries = testEntries.take(numberOfQuestionsFromSettings).toList();
+                      }
+                    } else {
+                      // Use all entries (either numberOfQuestionsFromSettings is 0 or >= entries.length)
+                      // If repeatQuestions is true but we are using all entries, shuffling is enough.
+                       if (!repeatQuestionsFromSettings) { // Only shuffle if not repeating and using all
+                           testEntries.shuffle();
+                       }
+                       // If repeating and using all, it implies they can see all questions, possibly more than once if count > entries.length
+                       // but current logic for numberOfQuestionsFromSettings > 0 handles the count.
+                       // If numberOfQuestionsFromSettings is 0, it means all entries, no specific count to repeat up to.
+                    }
+
+
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StudyScreen(
+                          entries: testEntries,
+                          mode: StudyMode.test,
+                        ),
+                      ),
+                    );
+                    setState(() {
+                       if (currentSheetName != null) {
+                         _updateStatus('Loaded: $currentSheetName', sheetName: currentSheetName);
+                       } else {
+                         _updateStatus(entries.isEmpty ? 'New' : 'Idle');
+                       }
+                    });
+                  },
+            child: Text('Start Test'),
+          ),
+          ElevatedButton(
+         
+             onPressed: FirebaseAuth.instance.currentUser == null
+                ? null
+                : () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => StudyScreen(
-                    entries: drillEntries,
-                    mode: StudyMode.drill,
+                  builder: (_) => FactSheetsScreen(
+                    loadUserSheets: () async {
+                      if (FirebaseAuth.instance.currentUser == null) return [];
+                      return FirestoreManager().getAllFactsheets();
+                    },
+                    loadGlobalSheets: () => FirestoreManager().getAllGlobalFactsheets(),
+                    saveSheet: (name, screenEntries) {
+                      if (FirebaseAuth.instance.currentUser == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('You must be logged in to save a new sheet.')),
+                        );
+                        return Future.value(null);
+                      }
+                      return FirestoreManager().saveFactsheet(name, entries);
+                    },
+                    deleteSheet: (sheetId) async {
+                      if (FirebaseAuth.instance.currentUser == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Login required to delete sheets.')),
+                        );
+                        return false;
+                      }
+                      return FirestoreManager().deleteFactsheet(sheetId);
+                    },
+                    renameSheet: (sheetId, newName) async {
+                      if (FirebaseAuth.instance.currentUser == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Login required to rename sheets.')),
+                        );
+                        return false;
+                      }
+                      return FirestoreManager().renameFactsheet(sheetId, newName);
+                    },
+                    openSheetInEditor: (FactSheet sheetToLoad) async {
+                      final List<Map<String, String>> sheetEntriesToLoad;
+                      if (sheetToLoad.isGlobal) {
+                        sheetEntriesToLoad = await FirestoreManager().getEntriesFromGlobalFactsheet(sheetToLoad.id);
+                      } else {
+                        if (FirebaseAuth.instance.currentUser == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Login required to load your sheets.')),
+                          );
+                          return;
+                        }
+                        sheetEntriesToLoad = await FirestoreManager().getEntriesFromFactsheet(sheetToLoad.id);
+                      }
+
+                      setState(() {
+                        entries.clear();
+                        entries.addAll(sheetEntriesToLoad);
+                        _updateStatus(
+                            sheetToLoad.isGlobal ? 'Viewing Global: ${sheetToLoad.name}' : 'Loaded: ${sheetToLoad.name}',
+                            sheetName: sheetToLoad.name
+                        );
+                        saved = true;
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('"${sheetToLoad.name}" ready with ${sheetEntriesToLoad.length} entries. Click "Add/Edit Entries" to view/modify.')),
+                          );
+                        }
+                      });
+                    },
+                    areMainEntriesEmpty: entries.isEmpty,
                   ),
                 ),
               );
-              setState(() {});
             },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange,
-      ),
-      child: Text('Start Drill'),
-    ),
-    ElevatedButton(
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => OptionsScreen()),
-        );
-      },
-      child: Text('Options'),
-    ),
-    ElevatedButton(
-      onPressed: () {
-        _generateTestFile(); // Call the test file generation
-      },
-      child: Text('Test file'), // Changed text
-    ),
-    ElevatedButton(
-      onPressed: _showAboutPage,
-      child: Text('Help/About'),
-    ),
-  ],
-);
-
-  Widget _buildManualEntry() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(status == 'Editing' && editingIndex != null ? 'Edit Entry:' : 'Manual Entry:'),
-
-      // Question field (now full width)
-      TextField(
-        controller: newQCtrl,
-        focusNode: questionFocusNode,
-        decoration: InputDecoration(labelText: 'Question'),
-        // Move to answer field when Enter is pressed
-        onSubmitted: (_) {
-          FocusScope.of(context).requestFocus(answerFocusNode);
-        },
-      ),
-
-      SizedBox(height: 8),
-
-      // Answer field (now full width)
-      TextField(
-        controller: newACtrl,
-        focusNode: answerFocusNode,
-        decoration: InputDecoration(labelText: 'Answer'),
-        // Add entry when Enter is pressed on the answer field
-        onSubmitted: (_) {
-          if (status == 'Editing' && editingIndex != null) {
-            _updateEntry();
-          } else {
-            _addEntry();
-            // Focus back to the question field for the next entry
-            // FocusScope.of(context).requestFocus(questionFocusNode); // Keep focus on Answer
-          }
-        },
-      ),
-
-      SizedBox(height: 8),
-
-      Row(children: [
-        if (status == 'Editing' && editingIndex != null) ...[
-          ElevatedButton(
-            onPressed: _updateEntry,
-            child: Text('Update'),
+            child: Text('Manage Online Files'),
           ),
-          SizedBox(width: 8),
           ElevatedButton(
-            onPressed: _deleteEntry,
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Delete'),
+            onPressed: entries.isEmpty
+                ? null
+                : () async {
+                    final drillEntries = List<Map<String, String>>.from(entries);
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StudyScreen(
+                          entries: drillEntries,
+                          mode: StudyMode.drill,
+                        ),
+                      ),
+                    );
+                    setState(() {
+                       if (currentSheetName != null) {
+                         _updateStatus('Loaded: $currentSheetName', sheetName: currentSheetName);
+                       } else {
+                         _updateStatus(entries.isEmpty ? 'New' : 'Idle');
+                       }
+                    });
+                  },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+            child: Text('Start Drill'),
           ),
-          SizedBox(width: 8),
           ElevatedButton(
-            onPressed: _cancelEdit,
-            child: Text('Cancel'),
+            onPressed: () async { // OptionsScreen might change settings, so reload them or ensure settings are live
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => OptionsScreen()),
+              );
+              // Optionally, force a settings reload if OptionsScreen doesn't update the global instance live
+              // await appSettings.load(); // Or ensure OptionsScreen modifies the appSettings instance directly
+              setState(() {
+                // Rebuild to reflect any potential settings changes if needed by this screen
+              });
+            },
+            child: Text('Options'),
           ),
-        ] else ...[
           ElevatedButton(
-            onPressed: _addEntry,
-            child: Text('Add'),
+            onPressed: () {
+              _generateTestFile();
+            },
+            child: Text('Test file'),
           ),
-          SizedBox(width: 32),
-
-          SizedBox(width: 8),
           ElevatedButton(
-               onPressed: entries.isEmpty ? null : _copyToClipboard, // Disable if entries is empty
-      child: Text('Copy to Clipboard'),
+            onPressed: _showAboutPage,
+            child: Text('Help/About'),
           ),
-
-           ElevatedButton(
-      onPressed: _pasteFromClipboard,
-      child: Text('Paste from Clipboard'),
-    ),
-
-
-
         ],
-        SizedBox(width: 8),
-      ]),
-    ],
-  );
+      );
 
-Future<void> _copyToClipboard() async {
+
+  Future<void> _copyToClipboard() async {
     if (entries.isEmpty) {
-      if (mounted) { // Check if widget is still in the tree
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('No entries to copy.')),
         );
       }
       return;
     }
-
-    bool hasCommasInEntries = false;
+     bool hasCommasInEntries = false;
     for (var entry in entries) {
       if (entry['q']!.contains(',') || entry['a']!.contains(',')) {
         hasCommasInEntries = true;
@@ -694,14 +596,12 @@ Future<void> _copyToClipboard() async {
     String textToCopy;
 
     if (hasCommasInEntries) {
-      // Prompt user for action
       final choice = await showDialog<String>(
         context: context,
-        barrierDismissible: false, // User must make a choice
+        barrierDismissible: false,
         builder: (ctx) => AlertDialog(
           title: Text('Commas Detected in Entries'),
-          content: Text(
-              'Your entries contain commas. How would you like to format the text for the clipboard?'),
+          content: Text('Your entries contain commas. How would you like to format the text for the clipboard?'),
           actions: <Widget>[
             TextButton(
               child: Text('Line by Line (Q then A)'),
@@ -729,16 +629,15 @@ Future<void> _copyToClipboard() async {
       }
 
       if (choice == 'lineByLine') {
-        textToCopy = entries.map((e) => '${e['q']}\n${e['a']}').join('\n\n'); // Changed to double newline for better separation
-      } else { // 'removeCommas'
+        textToCopy = entries.map((e) => '${e['q']}\n${e['a']}').join('\n\n');
+      } else {
         textToCopy = entries.map((e) {
-          String question = e['q']!.replaceAll(',', ' '); // Replace comma with space
-          String answer = e['a']!.replaceAll(',', ' ');   // Replace comma with space
+          String question = e['q']!.replaceAll(',', ' ');
+          String answer = e['a']!.replaceAll(',', ' ');
           return '$question,$answer';
         }).join('\n');
       }
     } else {
-      // Default format: question,answer (since no commas were found)
       textToCopy = entries.map((e) => '${e['q']},${e['a']}').join('\n');
     }
 
@@ -749,78 +648,24 @@ Future<void> _copyToClipboard() async {
           SnackBar(content: Text('Copied ${entries.length} entries to clipboard')),
         );
       }
-    } else if (mounted) { // Should not happen if entries is not empty, but as a safeguard
+    } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Nothing was copied to clipboard.')),
         );
     }
   }
 
-  Widget _buildWordList() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Word List:',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Text('${entries.length} entries'),
-        ],
-      ),
-      SizedBox(height: 8),
-      Expanded(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
-            child: ListView.builder(
-              itemCount: entries.length,
-              itemBuilder: (context, index) {
-                var entry = entries[index];
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 4),
-                  color: editingIndex == index ? Colors.blue.shade100 : null,
-                  child: ListTile(
-                    title: Row(
-                      children: [
-                        Text('${index + 1}. ',
-                          style: TextStyle(fontWeight: FontWeight.bold)),
-                        Expanded(
-                          flex: 1,
-                          child: Text(entry['q']!,
-                            overflow: TextOverflow.ellipsis),
-                        ),
-                        Text(' → ', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Expanded(
-                          flex: 1,
-                          child: Text(entry['a']!,
-                            overflow: TextOverflow.ellipsis),
-                        ),
-                      ],
-                    ),
-                    onTap: () => _editEntry(index),
-                    dense: true,
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
 
   Future<void> _newFile() async {
-    if (!saved && entries.isNotEmpty) { // Only show dialog if not saved AND entries exist
+    if (!saved && entries.isNotEmpty) {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text('Unsaved Changes'),
-          content: Text('Changes are not saved. Proceed anyway?'),
+          content: Text('You have unsaved changes. Proceeding will clear them. Continue?'),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('No')),
-            TextButton(onPressed: () => Navigator.of(ctx).pop(true),  child: Text('Yes')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('Yes')),
           ],
         ),
       );
@@ -828,20 +673,21 @@ Future<void> _copyToClipboard() async {
     }
     setState(() {
       entries.clear();
-      currentPath = null;
-      saved = true; // A new file is initially "saved" in the sense that there are no unsaved changes to it
-      editingIndex = null;
-      newQCtrl.clear();
-      newACtrl.clear();
-      status = 'New'; // Ensure status is 'New'
+      saved = true;
+      _updateStatus('New');
     });
+     if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Memory cleared. Ready for new entries.')),
+        );
+      }
   }
 
- Future<void> _pasteFromClipboard() async {
-    try {
+  Future<void> _pasteFromClipboard() async {
+     try {
       ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
       if (data == null || data.text == null || data.text!.isEmpty) {
-        if (mounted) { // Check if the widget is still in the tree
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Clipboard is empty')),
           );
@@ -862,7 +708,6 @@ Future<void> _copyToClipboard() async {
         return;
       }
 
-      // --- Format Detection ---
       bool isCommaSeparatedFormat = true;
       if (lines.isNotEmpty) {
         for (String line in lines) {
@@ -879,7 +724,6 @@ Future<void> _copyToClipboard() async {
            isCommaSeparatedFormat = false;
       }
 
-
       bool? shouldReplaceNullable = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -894,7 +738,7 @@ Future<void> _copyToClipboard() async {
               onPressed: () => Navigator.of(ctx).pop(true),
               child: Text('Replace'),
             ),
-             TextButton( // Added Cancel button
+             TextButton(
               onPressed: () => Navigator.of(ctx).pop(null),
               child: Text('Cancel'),
             ),
@@ -912,19 +756,17 @@ Future<void> _copyToClipboard() async {
       }
       bool shouldReplace = shouldReplaceNullable;
 
-
-      List<Map<String, String>> newEntries = [];
+      List<Map<String, String>> newEntriesPasted = [];
       bool hasParsingErrors = false;
 
       if (isCommaSeparatedFormat) {
-        print("Parsing as comma-separated format.");
         for (String line in lines) {
           List<String> parts = line.split(',');
           if (parts.length == 2) {
             String question = parts[0].trim();
             String answer = parts[1].trim();
             if (question.isNotEmpty && answer.isNotEmpty) {
-              newEntries.add({'q': question, 'a': answer});
+              newEntriesPasted.add({'q': question, 'a': answer});
             } else {
               hasParsingErrors = true;
             }
@@ -933,7 +775,6 @@ Future<void> _copyToClipboard() async {
           }
         }
       } else {
-        print("Parsing as question-per-line format.");
         for (int i = 0; i < lines.length; i += 2) {
           if (i + 1 >= lines.length) {
             hasParsingErrors = true;
@@ -946,12 +787,11 @@ Future<void> _copyToClipboard() async {
               hasParsingErrors = true;
               continue;
           }
-
-          newEntries.add({'q': question, 'a': answer});
+          newEntriesPasted.add({'q': question, 'a': answer});
         }
       }
 
-      if (newEntries.isEmpty) {
+      if (newEntriesPasted.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('No valid Q&A pairs found in clipboard using detected format.')),
@@ -963,26 +803,23 @@ Future<void> _copyToClipboard() async {
       if (mounted) {
         setState(() {
           if (shouldReplace) {
-            entries.clear(); // Clear existing entries if replacing
-            entries.addAll(newEntries);
-          } else {
-            entries.addAll(newEntries);
+            entries.clear();
+            currentSheetName = null;
           }
+          entries.addAll(newEntriesPasted);
           saved = false;
-          status = 'Editing';
+           _updateStatus(
+            'Loaded: ${shouldReplace ? "Pasted Content" : currentSheetName ?? "Pasted Content"}',
+            sheetName: shouldReplace ? "Pasted Content" : currentSheetName
+          );
+
         });
 
-        String message = '${shouldReplace ? 'Replaced with' : 'Appended'} ${newEntries.length} entries from clipboard'; // Message improved
-        print(entries.length);
-        print("tu9 - after paste");
-
+        String message = '${shouldReplace ? 'Replaced with' : 'Appended'} ${newEntriesPasted.length} entries from clipboard. Click "Add/Edit Entries" to view.';
         if (hasParsingErrors) {
           message += ' (some lines may not have been processed correctly)';
         }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
       }
 
     } catch (e) {
@@ -994,123 +831,47 @@ Future<void> _copyToClipboard() async {
     }
   }
 
-
-  void _addEntry() {
-    if (newQCtrl.text.trim().isEmpty || newACtrl.text.trim().isEmpty) { // Used trim()
-        ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Question and Answer cannot be empty.')),
-        );
-      return;
-    }
-    setState(() {
-      entries.add({'q': newQCtrl.text.trim(), 'a': newACtrl.text.trim()}); // Used trim()
-
-                print(entries.length);
-                print("tu10");
-
-
-      newQCtrl.clear();
-      newACtrl.clear();
-      saved = false;
-
-      FocusScope.of(context).requestFocus(questionFocusNode); // Keep focus on Question for next new entry
-    });
-  }
-
-  void _nextEntry() { // This function seems redundant if _cancelEdit does the same
-    setState(() {
-      newQCtrl.clear();
-      newACtrl.clear();
-      editingIndex = null;
-
-      FocusScope.of(context).requestFocus(questionFocusNode);
-    });
-  }
-
-  void _editEntry(int index) {
-    setState(() {
-      status = 'Editing'; // Ensure status is 'Editing'
-      editingIndex = index;
-      newQCtrl.text = entries[index]['q']!;
-      newACtrl.text = entries[index]['a']!;
-
-      FocusScope.of(context).requestFocus(questionFocusNode);
-    });
-  }
-
-  void _updateEntry() {
-    if (editingIndex == null || newQCtrl.text.trim().isEmpty || newACtrl.text.trim().isEmpty) { // Used trim()
-      ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Question and Answer cannot be empty for update.')),
-        );
-      return;
-    }
-    setState(() {
-      entries[editingIndex!] = {'q': newQCtrl.text.trim(), 'a': newACtrl.text.trim()}; // Used trim()
-      saved = false;
-    });
-    _cancelEdit(); // Resets form and focus
-  }
-
-  void _deleteEntry() {
-    if (editingIndex == null) return;
-    setState(() {
-      entries.removeAt(editingIndex!);
-      saved = false;
-    });
-    _cancelEdit(); // Resets form and focus
-  }
-
   void _generateTestFile() {
-    if (!saved && entries.isNotEmpty) { // Check for unsaved changes
-       showDialog<bool>(
+    if (!saved && entries.isNotEmpty) {
+      showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
           title: Text('Unsaved Changes'),
           content: Text('You have unsaved changes. Generating a test file will clear them. Proceed?'),
           actions: [
             TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('No')),
-            TextButton(onPressed: () {
-              Navigator.of(ctx).pop(true);
-              _performGenerateTestFile(); // Call generation after dialog
-            }, child: Text('Yes')),
+            TextButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop(true);
+                  _performGenerateTestFile();
+                },
+                child: Text('Yes')),
           ],
         ),
       ).then((proceed) {
-        if (proceed != true) return; // If user chose No or dismissed
+        if (proceed != true) return;
       });
     } else {
-      _performGenerateTestFile(); // No unsaved changes or entries are empty, proceed directly
+      _performGenerateTestFile();
     }
   }
 
-  void _performGenerateTestFile() { // Actual generation logic
+  void _performGenerateTestFile() {
     setState(() {
-      entries.clear(); // Clear existing entries
+      entries.clear();
       for (int i = 1; i <= 30; i++) {
         entries.add({
-          'q': 'Q$i: What is $i + $i?',
-          'a': 'A$i: It is ${i * 2}.',
+          'q': '$i + $i',
+          'a': '${i * 2}',
         });
       }
-      saved = false; // New content, not saved yet
-      status = 'Editing'; // Set status to editing
+      saved = false;
+      _updateStatus('Loaded: Test File', sheetName: "Test File");
     });
-    if(mounted){
+    if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generated 30 new test entries and cleared previous.')),
+        SnackBar(content: Text('Generated 30 new test entries. Click "Add/Edit Entries" to view.')),
       );
     }
-  }
-
-
-  void _cancelEdit() {
-    setState(() {
-      editingIndex = null;
-      newQCtrl.clear();
-      newACtrl.clear();
-      // status remains 'Editing' or 'New' unless explicitly changed by another action
-      FocusScope.of(context).requestFocus(questionFocusNode);
-    });
   }
 }

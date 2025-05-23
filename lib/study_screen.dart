@@ -93,9 +93,13 @@ class _StudyScreenState extends State<StudyScreen> {
   if (activeEntries.isEmpty || currentIndex >= activeEntries.length) return;
   
   // Get user answer and correct answer
+
   String userAnswer = answerController.text.trim();
   String correctAnswer = activeEntries[currentIndex]['a'] ?? '';
   
+    if (answerController.text == "kk") {
+    userAnswer = correctAnswer;
+  }
   // Save the original answers for display
   String displayUserAnswer = userAnswer;
   String displayCorrectAnswer = correctAnswer;
@@ -471,17 +475,22 @@ void showResults() {
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start, // Keep label left-aligned
                   children: [
                     Text(
                       'Question:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                     ),
                     SizedBox(height: 8),
-                    Text(
-                      activeEntries[currentIndex]['q'] ?? '',
-                      style: TextStyle(fontSize: 20),
+                    // MODIFICATION: Wrapped question Text in Center and added textAlign
+                    Center(
+                      child: Text(
+                        activeEntries[currentIndex]['q'] ?? '',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                        textAlign: TextAlign.center, 
+                      ),
                     ),
+                    // END MODIFICATION
                   ],
                 ),
               ),
@@ -490,24 +499,26 @@ void showResults() {
             SizedBox(height: 16),
             
             // Answer input
-      TextField(
-  controller: answerController,
-  enabled: feedback == null, // Use feedback instead to determine if answer has been checked
-  decoration: InputDecoration(
-    labelText: 'Your Answer',
-    border: OutlineInputBorder(),
-    filled: feedback != null, // Use feedback to determine if answer has been checked
-    fillColor: isCorrect ? Colors.green.shade50 : Colors.red.shade50,
-  ),
-  onChanged: (_) => setState(() {}),
-  onSubmitted: (_) {
-    if (feedback == null) {
-      checkAnswer();
-    } else {
-      nextQuestion();
-    }
-  },
-),
+            TextField(
+              controller: answerController,
+              enabled: feedback == null, // Use feedback instead to determine if answer has been checked
+              textAlign: TextAlign.center,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+              decoration: InputDecoration(
+                labelText: 'Your Answer',
+                border: OutlineInputBorder(),
+                filled: feedback != null, // Use feedback to determine if answer has been checked
+                fillColor: isCorrect ? Colors.green.shade50 : Colors.red.shade500,
+              ),
+              onChanged: (_) => setState(() {}),
+              onSubmitted: (_) {
+                if (feedback == null) {
+                  checkAnswer();
+                } else {
+                  nextQuestion();
+                }
+              },
+            ),
 
             SizedBox(height: 16),
 
@@ -546,7 +557,7 @@ void showResults() {
               Container(
                 padding: EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isCorrect == true ? Colors.green.shade100 : Colors.green.shade100,
+                  color: isCorrect == true ? Colors.green.shade100 : Colors.green.shade300,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Column(

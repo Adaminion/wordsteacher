@@ -1,26 +1,21 @@
+// © Adaminion 2025 2505220950
 import 'package:flutter/material.dart';
 // Make sure FirestoreManager is accessible or pass its instance/methods
 
-/// Model for a single fact sheet
-typedef Entry = Map<String, String>; // This typedef was defined here. In main.dart it was List<Map<String, String>>. Consistent?
-                                    // For FactSheet.entries, it might be better to use List<Map<String, String>> for consistency
-                                    // with how 'entries' is handled in main.dart.
-                                    // However, if Entry represents a single Q/A pair, then List<Entry> is correct for FactSheet.entries.
-                                    // FirestoreManager returns List<Map<String, String>> for getEntriesFrom...
-                                    // Let's assume Entry is Map<String, String> and thus List<Entry> for a sheet is correct.
-
+// Assuming Entry and FactSheet models are defined as you had them:
+typedef Entry = Map<String, String>;
 
 class FactSheet {
   final String id;
   final String name;
-  final List<Entry> entries; // List of Q/A pairs
+  final List<Entry> entries; // Usually empty for list view, loaded on demand
   final int entryCount;
   final bool isGlobal;
 
   FactSheet({
     required this.id,
     required this.name,
-    required this.entries,
+    this.entries = const [], // Default to empty list
     required this.entryCount,
     this.isGlobal = false,
   });
@@ -29,8 +24,6 @@ class FactSheet {
 /// Callback signatures
 typedef LoadUserSheetsCallback = Future<List<FactSheet>> Function();
 typedef LoadGlobalSheetsCallback = Future<List<FactSheet>> Function();
-// SaveSheetCallback in main.dart's saveSheet implies it saves _memorlyHomeState.entries,
-// so the List<Entry> here is for the structure, but the data comes from the main screen.
 typedef SaveSheetCallback = Future<String?> Function(String name, List<Map<String, String>> currentMainEntries);
 typedef DeleteSheetCallback = Future<bool> Function(String sheetId);
 typedef RenameSheetCallback = Future<bool> Function(String sheetId, String newName);
@@ -44,7 +37,7 @@ class FactSheetsScreen extends StatefulWidget {
   final DeleteSheetCallback deleteSheet;
   final RenameSheetCallback renameSheet;
   final OpenSheetInEditorCallback openSheetInEditor;
-  final bool areMainEntriesEmpty; // <-- New parameter
+  final bool areMainEntriesEmpty;
 
   const FactSheetsScreen({
     super.key,
@@ -54,25 +47,47 @@ class FactSheetsScreen extends StatefulWidget {
     required this.deleteSheet,
     required this.renameSheet,
     required this.openSheetInEditor,
-    required this.areMainEntriesEmpty, // <-- Added to constructor
+    required this.areMainEntriesEmpty,
   });
 
   @override
   _FactSheetsScreenState createState() => _FactSheetsScreenState();
 }
 
-class _FactSheetsScreenState extends State<FactSheetsScreen> {
+class _FactSheetsScreenState extends State<FactSheetsScreen> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
   List<FactSheet> _userSheets = [];
   List<FactSheet> _globalSheets = [];
-  FactSheet? _selectedSheet;
+  FactSheet? _selectedSheet; // This will now be context-aware based on the active tab
+
   bool _isLoadingUserSheets = false;
   bool _isLoadingGlobalSheets = false;
-  bool _isPerformingAction = false;
+  bool _hasAttemptedLoadGlobalSheets = false; // To load global sheets only once per tab visit initially
+  bool _isPerformingAction = false; // For generic actions like save, delete, rename
 
   @override
   void initState() {
     super.initState();
-    _reloadData();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(_handleTabSelection);
+    _loadUserSheetsData(); // Load user sheets initially
+  }
+
+  @override
+  void dispose() {
+    _tabController.removeListener(_handleTabSelection);
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  void _handleTabSelection() {
+    if (_tabController.indexIsChanging) {
+      // Clear selection when tab changes
+      _clearSelection();
+      if (_tabController.index == 1 && !_hasAttemptedLoadGlobalSheets) {
+        _loadGlobalSheetsData();
+      }
+    }
   }
 
   bool get _isLoading => _isLoadingUserSheets || _isLoadingGlobalSheets || _isPerformingAction;
@@ -80,9 +95,7 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
   void _performAction(Future<void> Function() actionCallback) async {
     if (_isPerformingAction) return;
     if (mounted) {
-      setState(() {
-        _isPerformingAction = true;
-      });
+      setState(() { _isPerformingAction = true; });
     }
     try {
       await actionCallback();
@@ -94,59 +107,57 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() {
-          _isPerformingAction = false;
-        });
+        setState(() { _isPerformingAction = false; });
       }
     }
   }
 
   void _clearSelection() {
     if(mounted){
-      setState(() {
-        _selectedSheet = null;
-      });
+      setState(() { _selectedSheet = null; });
     }
   }
 
-  Future<void> _reloadData() async {
+  Future<void> _loadUserSheetsData() async {
     _clearSelection();
-    if(mounted) {
-      setState(() {
-        _isLoadingUserSheets = true;
-        _isLoadingGlobalSheets = true;
-      });
-    }
-
+    if(mounted) setState(() { _isLoadingUserSheets = true; });
     try {
-      final userSheetsFuture = widget.loadUserSheets();
-      final globalSheetsFuture = widget.loadGlobalSheets();
-
-      final results = await Future.wait([userSheetsFuture, globalSheetsFuture]);
-
-      if (mounted) {
-        setState(() {
-          _userSheets = results[0];
-          _globalSheets = results[1];
-        });
-      }
+      final userSheets = await widget.loadUserSheets();
+      if (mounted) setState(() { _userSheets = userSheets; });
     } catch (e) {
-      if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading sheets: ${e.toString()}')),
-        );
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading your sheets: ${e.toString()}')));
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoadingUserSheets = false;
-          _isLoadingGlobalSheets = false;
-        });
-      }
+      if (mounted) setState(() { _isLoadingUserSheets = false; });
     }
   }
+
+  Future<void> _loadGlobalSheetsData() async {
+    _clearSelection();
+    if(mounted) setState(() { _isLoadingGlobalSheets = true; _hasAttemptedLoadGlobalSheets = true; });
+    try {
+      final globalSheets = await widget.loadGlobalSheets();
+      if (mounted) setState(() { _globalSheets = globalSheets; });
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error loading global sheets: ${e.toString()}')));
+    } finally {
+      if (mounted) setState(() { _isLoadingGlobalSheets = false; });
+    }
+  }
+
+  Future<void> _refreshCurrentTabData() async {
+    if (_tabController.index == 0) {
+      await _loadUserSheetsData();
+    } else {
+      // For global sheets, we reset the flag to allow re-fetching if desired on next explicit refresh
+      _hasAttemptedLoadGlobalSheets = false; 
+      await _loadGlobalSheetsData();
+    }
+  }
+
 
   Future<void> _handleCreateNewSheet() async {
+    // This action is always for user sheets, regardless of active tab.
+    // It saves the *current main editor entries* as a new user sheet.
     final nameController = TextEditingController();
     final name = await showDialog<String?>(
       context: context,
@@ -168,21 +179,13 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
     );
     if (name != null && name.isNotEmpty) {
       _performAction(() async {
-        // Pass empty list for screenEntries as the callback uses main 'entries'
-        final newSheetId = await widget.saveSheet(name, []);
+        final newSheetId = await widget.saveSheet(name, []); // Pass empty list; main.dart uses its own 'entries'
         if (newSheetId != null) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Sheet "$name" saved successfully!')),
-            );
-          }
-          _reloadData();
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sheet "$name" saved successfully!')));
+          _loadUserSheetsData(); // Refresh user sheets list
+          if (_tabController.index != 0) _tabController.animateTo(0); // Switch to user sheets tab
         } else {
-          if (mounted){
-             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to save sheet "$name". User might not be logged in or another error occurred.')),
-            );
-          }
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to save sheet "$name". User might not be logged in or another error occurred.')));
         }
       });
     }
@@ -190,18 +193,17 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
 
   Future<void> _handleLoadSelectedSheet() async {
     if (_selectedSheet == null) return;
-
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(_selectedSheet!.isGlobal ? 'View Global Sheet?' : 'Load Sheet?'),
+        title: Text(_selectedSheet!.isGlobal ? 'View Global Sheet?' : 'Load User Sheet?'),
         content: Text(
           _selectedSheet!.isGlobal
               ? 'View the content of global sheet "${_selectedSheet!.name}" in the main editor?'
               : 'This will replace your current unsaved entries in the main editor with the content of "${_selectedSheet!.name}". Proceed?',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(_selectedSheet!.isGlobal ? 'View' : 'Load')),
         ],
       ),
@@ -216,26 +218,25 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
                 ? 'Viewing global sheet "${_selectedSheet!.name}".'
                 : 'Sheet "${_selectedSheet!.name}" loaded into editor.')),
           );
-          // Pop this screen after loading/viewing to return to the main editor
-          Navigator.pop(context);
+          Navigator.pop(context); // Pop this screen to return to the main editor
         }
       });
     }
   }
 
   Future<void> _handleDeleteSelectedSheet() async {
-    if (_selectedSheet == null || _selectedSheet!.isGlobal) return;
+    if (_selectedSheet == null || _selectedSheet!.isGlobal) return; // Can only delete user sheets
      final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Delete Sheet?'),
+        title: const Text('Delete Sheet?'),
         content: Text('Are you sure you want to delete "${_selectedSheet!.name}"? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: Text('Delete'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -245,40 +246,32 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
        _performAction(() async {
         final success = await widget.deleteSheet(_selectedSheet!.id);
         if (success) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Sheet "${_selectedSheet!.name}" deleted.')),
-            );
-          }
-          _reloadData(); // This will also clear selection
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sheet "${_selectedSheet!.name}" deleted.')));
+          _loadUserSheetsData(); // Refresh user sheets, which will also clear selection
         } else {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to delete sheet. User might not be logged in or another error occurred.')),
-            );
-          }
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to delete sheet. User might not be logged in or another error occurred.')));
         }
       });
     }
   }
 
   Future<void> _handleRenameSelectedSheet() async {
-    if (_selectedSheet == null || _selectedSheet!.isGlobal) return;
+    if (_selectedSheet == null || _selectedSheet!.isGlobal) return; // Can only rename user sheets
     final nameController = TextEditingController(text: _selectedSheet!.name);
     final newName = await showDialog<String?>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Rename Sheet'),
+        title: const Text('Rename Sheet'),
         content: TextField(
           controller: nameController,
-          decoration: InputDecoration(labelText: 'New Sheet Name'),
+          decoration: const InputDecoration(labelText: 'New Sheet Name'),
           autofocus: true,
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, nameController.text.trim()),
-            child: Text('Rename'),
+            child: const Text('Rename'),
           ),
         ],
       ),
@@ -288,84 +281,64 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
       _performAction(() async {
         final success = await widget.renameSheet(_selectedSheet!.id, newName);
         if (success) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Sheet renamed to "$newName".')),
-            );
-          }
-          _reloadData(); // This will also clear selection
+          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Sheet renamed to "$newName".')));
+          _loadUserSheetsData(); // Refresh user sheets, which will also clear selection
         } else {
-           if (mounted) {
-             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to rename sheet. User might not be logged in or another error occurred.')),
-            );
-           }
+           if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to rename sheet. User might not be logged in or another error occurred.')));
         }
       });
     }
   }
 
-  Widget _buildSheetList(List<FactSheet> sheets, String title) {
-    if (sheets.isEmpty) {
-      // Don't show "Loading..." message here if it's handled by the main CircularProgressIndicator
-      // Only show "No sheets available" if not loading
-      if (!((title == "Your Sheets" && _isLoadingUserSheets) || (title.startsWith("Global") && _isLoadingGlobalSheets))) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Center(child: Text('No $title available.', style: TextStyle(fontStyle: FontStyle.italic))),
-        );
-      }
-      return SizedBox.shrink(); // Show nothing if loading that specific list and it's empty
+  Widget _buildSheetList(List<FactSheet> sheets, bool isLoadingList, String noSheetsMessage) {
+    if (isLoadingList && sheets.isEmpty) { // Show loading only if list is empty and actually loading
+      return const Center(child: Padding(padding: EdgeInsets.all(16.0), child: CircularProgressIndicator()));
     }
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Text(title, style: Theme.of(context).textTheme.headlineSmall),
-        ),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
-          itemCount: sheets.length,
-          itemBuilder: (_, i) {
-            final sheet = sheets[i];
-            final isSelected = _selectedSheet?.id == sheet.id && _selectedSheet?.isGlobal == sheet.isGlobal;
-            return Card(
-              elevation: isSelected ? 4.0 : 1.0,
-              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-              child: ListTile(
-                tileColor: isSelected ? Theme.of(context).primaryColorLight.withOpacity(0.3) : null,
-                leading: Icon(
-                  sheet.isGlobal
-                    ? Icons.public
-                    : (isSelected ? Icons.check_circle : Icons.library_books),
-                  color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodySmall?.color,
-                ),
-                title: Text(sheet.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                subtitle: Text('${sheet.entryCount} entries'),
-                onTap: () {
-                  setState(() {
-                    if (isSelected) {
-                      _selectedSheet = null;
-                    } else {
-                      _selectedSheet = sheet;
-                    }
-                  });
-                },
-                trailing: IconButton( // Keep this for quick load/view
-                  icon: Icon(Icons.file_download_done_outlined, color: Theme.of(context).colorScheme.secondary),
-                  tooltip: sheet.isGlobal ? 'View Sheet in Editor' : 'Load Sheet into Editor',
-                  onPressed: () {
-                     setState(() { _selectedSheet = sheet; }); // Select first
-                     _handleLoadSelectedSheet(); // Then load
-                  },
-                ),
-              ),
-            );
-          },
-        ),
-      ],
+    if (sheets.isEmpty) {
+      return Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text(noSheetsMessage, style: const TextStyle(fontStyle: FontStyle.italic))));
+    }
+
+    return ListView.builder(
+      key: PageStorageKey<String>(noSheetsMessage), // To preserve scroll position on tab switch
+      itemCount: sheets.length,
+      itemBuilder: (_, i) {
+        final sheet = sheets[i];
+        // Determine if this sheet is the currently selected one
+        final isSelected = _selectedSheet?.id == sheet.id && _selectedSheet?.isGlobal == sheet.isGlobal;
+
+        return Card(
+          elevation: isSelected ? 4.0 : 1.0,
+          margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+          child: ListTile(
+            tileColor: isSelected ? Theme.of(context).primaryColorLight.withOpacity(0.3) : null,
+            leading: Icon(
+              sheet.isGlobal
+                ? Icons.public
+                : (isSelected ? Icons.check_circle_outline : Icons.folder_shared_outlined), // Changed icons
+              color: isSelected ? Theme.of(context).primaryColor : Theme.of(context).textTheme.bodySmall?.color,
+            ),
+            title: Text(sheet.name, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+            subtitle: Text('${sheet.entryCount} entries'),
+            onTap: () {
+              setState(() {
+                if (isSelected) {
+                  _selectedSheet = null; // Deselect if tapped again
+                } else {
+                  _selectedSheet = sheet; // Select this sheet
+                }
+              });
+            },
+            trailing: IconButton(
+              icon: Icon(Icons.file_open_outlined, color: Theme.of(context).colorScheme.secondary), // Changed icon
+              tooltip: sheet.isGlobal ? 'View Sheet in Editor' : 'Load Sheet into Editor',
+              onPressed: () {
+                 setState(() { _selectedSheet = sheet; });
+                 _handleLoadSelectedSheet();
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -376,43 +349,50 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage Sheets'),
+        title: const Text('Manage Sheets'),
         actions: [
           IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _reloadData,
-            tooltip: 'Refresh Lists',
+            icon: const Icon(Icons.refresh),
+            onPressed: _isLoading ? null : _refreshCurrentTabData,
+            tooltip: 'Refresh Current List',
           ),
         ],
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: const [
+            Tab(icon: Icon(Icons.person_outline), text: 'Your Sheets'),
+            Tab(icon: Icon(Icons.public), text: 'Global Sheets'),
+          ],
+        ),
       ),
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(12.0), // Increased padding
             child: Wrap(
               spacing: 8.0,
               runSpacing: 8.0,
               alignment: WrapAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  icon: Icon(Icons.add_circle_outline),
-                  label: Text('Save Current as New'),
-                  // Updated onPressed condition
+                  icon: const Icon(Icons.add_circle_outline),
+                  label: const Text('Save Current as New'),
                   onPressed: (widget.areMainEntriesEmpty || _isLoading) ? null : _handleCreateNewSheet,
                 ),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.file_download_done_outlined),
-                  label: Text('View/Load Selected'),
+                  icon: const Icon(Icons.file_download_done_outlined),
+                  label: const Text('View/Load Selected'),
                   onPressed: _isLoading || !canLoadSelected ? null : _handleLoadSelectedSheet,
                 ),
+                // Rename and Delete only enabled if a user sheet is selected
                 ElevatedButton.icon(
-                  icon: Icon(Icons.drive_file_rename_outline),
-                  label: Text('Rename Selected'),
+                  icon: const Icon(Icons.drive_file_rename_outline),
+                  label: const Text('Rename Selected'),
                   onPressed: _isLoading || !canModifySelected ? null : _handleRenameSelectedSheet,
                 ),
                 ElevatedButton.icon(
-                  icon: Icon(Icons.delete_sweep_outlined),
-                  label: Text('Delete Selected'),
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  label: const Text('Delete Selected'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[600],
                     foregroundColor: Colors.white
@@ -422,24 +402,20 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> {
               ],
             ),
           ),
-          if (_isLoadingUserSheets || _isLoadingGlobalSheets) const LinearProgressIndicator(),
+          // LinearProgressIndicator is removed as loading is shown within tab content
           Expanded(
-            child: RefreshIndicator(
-              onRefresh: _reloadData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  children: [
-                    if (_isLoadingUserSheets && _userSheets.isEmpty && !_globalSheets.isNotEmpty) // Show only if both are loading or user sheets specifically
-                      Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text("Loading your sheets..."))),
-                    _buildSheetList(_userSheets, "Your Sheets"),
-                    SizedBox(height: 16),
-                     if (_isLoadingGlobalSheets && _globalSheets.isEmpty && !_userSheets.isNotEmpty) // Show only if both are loading or global sheets specifically
-                      Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text("Loading global sheets..."))),
-                    _buildSheetList(_globalSheets, "Global Sheets (Read-Only)"),
-                  ],
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                RefreshIndicator(
+                  onRefresh: _loadUserSheetsData, // Specific refresh for user sheets
+                  child: _buildSheetList(_userSheets, _isLoadingUserSheets, "No sheets found for your account."),
                 ),
-              ),
+                RefreshIndicator(
+                  onRefresh: _loadGlobalSheetsData, // Specific refresh for global sheets
+                  child: _buildSheetList(_globalSheets, _isLoadingGlobalSheets, "No global sheets available at the moment."),
+                ),
+              ],
             ),
           ),
         ],

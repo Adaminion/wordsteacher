@@ -1,11 +1,18 @@
+// THIS IS ANDROID/BUILD.GRADLE
+
 buildscript {
+    ext.kotlin_version = '2.0.0'
+    ext.agp_version = '8.4.0' // Corrected typo and using the desired version
+
     repositories {
         google()
         mavenCentral()
     }
+
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.2.1'
-        classpath 'com.google.gms:google-services:4.3.15'
+        classpath "com.android.tools.build:gradle:$agp_version" // Using the variable
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.4.2' // Updated version (check for the latest if possible)
     }
 }
 
@@ -27,3 +34,4 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
