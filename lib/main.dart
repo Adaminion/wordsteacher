@@ -1,4 +1,4 @@
-// © Adaminion 2025 2505220950
+// © Adaminion 2025 2505231723
 
 import 'dart:math';
 import 'study_screen.dart';
@@ -18,8 +18,12 @@ import 'options_screen.dart';
 import 'settings.dart'; // Import your Settings class
 import 'entry_editor_screen.dart';
 
+// NEW: Import for internationalization
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 // Full version string, can be used in About/Help screen
-final String fullVersionString = 'Memorly v.0.9.1 beta - 2505222319';
+final String fullVersionString = 'Memorly v.0.9.3 beta - 2505231723';
 // Shortened title for AppBar
 final String appTitle = 'Memorly';
 
@@ -54,6 +58,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext ctx) => MaterialApp(
         title: appTitle,
         debugShowCheckedModeBanner: false,
+        
+        // NEW: Add localization delegates and supported locales
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('en'), // English
+          Locale('es'), // Spanish
+          Locale('pl'), // French
+          Locale('no'), // Norwegian
+          Locale('zh'), // Chinese
+        ],
+        
         theme: ThemeData(
           primarySwatch: Colors.green,
           scaffoldBackgroundColor: const Color(0xFFF7F9D9),
@@ -70,12 +90,12 @@ class MyApp extends StatelessWidget {
               borderSide: BorderSide(color: Colors.green.shade600, width: 2),
             ),
           ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade500,
-              foregroundColor: Colors.white,
-            ),
-          ),
+elevatedButtonTheme: ElevatedButtonThemeData(
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.green.shade500,
+    foregroundColor: Colors.white,
+  ),
+),
           textButtonTheme: TextButtonThemeData(
             style: TextButton.styleFrom(
               foregroundColor: Colors.green.shade700,
@@ -217,11 +237,16 @@ class _MemorlyHomeState extends State<MemorlyHome> {
   }
 
   @override
-  Widget build(BuildContext ctx) => Scaffold(
+  Widget build(BuildContext ctx) {
+    // NEW: Get the AppLocalizations instance
+    final localizations = AppLocalizations.of(ctx)!;
+    
+    return Scaffold(
         appBar: AppBar(
           title: Row(
             children: [
-              Text(appTitle),
+              // CHANGED: Use localized app title
+              Text(localizations.appTitle),
               SizedBox(width: 10),
               Expanded(
                 child: Text(
@@ -266,7 +291,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                 onPressed: () async {
                   await FirebaseAuth.instance.signOut();
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Logged out successfully')),
+                    // CHANGED: Use localized text
+                    SnackBar(content: Text(localizations.loggedOutSuccessfully)),
                   );
                 },
               ),
@@ -319,7 +345,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                   children: [
                     Text('Memorly    0.9.0 beta', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.green.shade800)),
                     SizedBox(height: 16),
-                    _buildFileControls(),
+                    _buildFileControls(localizations), // Pass localizations
                     SizedBox(height: 16),
                     Expanded(
                       child: Center(
@@ -333,6 +359,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
           ],
         ),
       );
+  }
 
   void _showAboutPage() {
     Navigator.push(
@@ -341,7 +368,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
     );
   }
 
-  Widget _buildFileControls() => Wrap(
+  // CHANGED: Accept localizations parameter and use localized strings
+  Widget _buildFileControls(AppLocalizations localizations) => Wrap(
         spacing: 8,
         runSpacing: 8,
         alignment: WrapAlignment.center,
@@ -352,7 +380,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                 : () async {
                     await _newFile();
                   },
-            child: Text('Clear Memory'),
+            child: Text(localizations.forget), // CHANGED: Use localized text
           ),
           ElevatedButton(
             onPressed: () async {
@@ -384,7 +412,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                  _updateStatus(status, sheetName: currentSheetName);
               }
             },
-            child: Text('Add/Edit Entries'),
+            child: Text(localizations.edit), // CHANGED: Use localized text
           ),
           ElevatedButton(
             onPressed: entries.isEmpty
@@ -444,7 +472,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                        }
                     });
                   },
-            child: Text('Start Test'),
+            child: Text(localizations.test), // CHANGED: Use localized text
           ),
           ElevatedButton(
          
@@ -463,7 +491,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                     saveSheet: (name, screenEntries) {
                       if (FirebaseAuth.instance.currentUser == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('You must be logged in to save a new sheet.')),
+                          // CHANGED: Use localized text
+                          SnackBar(content: Text(localizations.mustBeLoggedInToSave)),
                         );
                         return Future.value(null);
                       }
@@ -472,7 +501,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                     deleteSheet: (sheetId) async {
                       if (FirebaseAuth.instance.currentUser == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Login required to delete sheets.')),
+                          // CHANGED: Use localized text
+                          SnackBar(content: Text(localizations.loginRequiredToDelete)),
                         );
                         return false;
                       }
@@ -481,7 +511,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                     renameSheet: (sheetId, newName) async {
                       if (FirebaseAuth.instance.currentUser == null) {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Login required to rename sheets.')),
+                          // CHANGED: Use localized text
+                          SnackBar(content: Text(localizations.loginRequiredToRename)),
                         );
                         return false;
                       }
@@ -494,7 +525,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                       } else {
                         if (FirebaseAuth.instance.currentUser == null) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Login required to load your sheets.')),
+                            // CHANGED: Use localized text
+                            SnackBar(content: Text(localizations.loginRequiredToLoad)),
                           );
                           return;
                         }
@@ -521,7 +553,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                 ),
               );
             },
-            child: Text('Manage Online Files'),
+            child: Text(localizations.cloud), // CHANGED: Use localized text
           ),
           ElevatedButton(
             onPressed: entries.isEmpty
@@ -546,7 +578,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                     });
                   },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-            child: Text('Start Drill'),
+            child: Text(localizations.drill), // CHANGED: Use localized text
           ),
           ElevatedButton(
             onPressed: () async { // OptionsScreen might change settings, so reload them or ensure settings are live
@@ -560,27 +592,30 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                 // Rebuild to reflect any potential settings changes if needed by this screen
               });
             },
-            child: Text('Options'),
+            child: Text(localizations.options), // CHANGED: Use localized text
           ),
-          ElevatedButton(
-            onPressed: () {
-              _generateTestFile();
-            },
-            child: Text('Test file'),
-          ),
+      //    ElevatedButton(
+      //      onPressed: () {
+      //        _generateTestFile();
+      //      },
+      //      child: Text('Test file'),
+      //    ),
           ElevatedButton(
             onPressed: _showAboutPage,
-            child: Text('Help/About'),
+            child: Text(localizations.help), // CHANGED: Use localized text
           ),
         ],
       );
 
 
   Future<void> _copyToClipboard() async {
+    final localizations = AppLocalizations.of(context)!;
+    
     if (entries.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No entries to copy.')),
+          // CHANGED: Use localized text
+          SnackBar(content: Text(localizations.noEntriesToCopy)),
         );
       }
       return;
@@ -600,19 +635,20 @@ class _MemorlyHomeState extends State<MemorlyHome> {
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: Text('Commas Detected in Entries'),
-          content: Text('Your entries contain commas. How would you like to format the text for the clipboard?'),
+          // CHANGED: Use localized text
+          title: Text(localizations.commasDetectedInEntries),
+          content: Text(localizations.commasDetectedMessage),
           actions: <Widget>[
             TextButton(
-              child: Text('Line by Line (Q then A)'),
+              child: Text(localizations.lineByLineFormat),
               onPressed: () => Navigator.of(ctx).pop('lineByLine'),
             ),
             TextButton(
-              child: Text('Remove Commas (Q,A)'),
+              child: Text(localizations.removeCommasFormat),
               onPressed: () => Navigator.of(ctx).pop('removeCommas'),
             ),
             TextButton(
-              child: Text('Cancel'),
+              child: Text(localizations.cancel),
               onPressed: () => Navigator.of(ctx).pop('cancel'),
             ),
           ],
@@ -622,7 +658,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       if (choice == null || choice == 'cancel') {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Copy operation cancelled.')),
+            // CHANGED: Use localized text
+            SnackBar(content: Text(localizations.copyOperationCancelled)),
           );
         }
         return;
@@ -645,27 +682,32 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       await Clipboard.setData(ClipboardData(text: textToCopy));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Copied ${entries.length} entries to clipboard')),
+          // CHANGED: Use localized text with placeholder
+          SnackBar(content: Text(localizations.copiedEntriesToClipboard(entries.length))),
         );
       }
     } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Nothing was copied to clipboard.')),
+          // CHANGED: Use localized text
+          SnackBar(content: Text(localizations.nothingCopiedToClipboard)),
         );
     }
   }
 
 
   Future<void> _newFile() async {
+    final localizations = AppLocalizations.of(context)!;
+    
     if (!saved && entries.isNotEmpty) {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Unsaved Changes'),
-          content: Text('You have unsaved changes. Proceeding will clear them. Continue?'),
+          // CHANGED: Use localized text
+          title: Text(localizations.unsavedChanges),
+          content: Text(localizations.unsavedChangesNewFileMessage),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('No')),
-            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text('Yes')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(localizations.no)),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: Text(localizations.yes)),
           ],
         ),
       );
@@ -678,18 +720,22 @@ class _MemorlyHomeState extends State<MemorlyHome> {
     });
      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Memory cleared. Ready for new entries.')),
+          // CHANGED: Use localized text
+          SnackBar(content: Text(localizations.memoryClearedMessage)),
         );
       }
   }
 
   Future<void> _pasteFromClipboard() async {
+    final localizations = AppLocalizations.of(context)!;
+    
      try {
       ClipboardData? data = await Clipboard.getData(Clipboard.kTextPlain);
       if (data == null || data.text == null || data.text!.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Clipboard is empty')),
+            // CHANGED: Use localized text
+            SnackBar(content: Text(localizations.clipboardIsEmpty)),
           );
         }
         return;
@@ -702,7 +748,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       if (lines.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Clipboard contains no processable content.')),
+            // CHANGED: Use localized text
+            SnackBar(content: Text(localizations.clipboardNoProcessableContent)),
           );
         }
         return;
@@ -727,20 +774,21 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       bool? shouldReplaceNullable = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Paste from Clipboard'),
-          content: Text('Do you want to replace existing entries or append to them?'),
+          // CHANGED: Use localized text
+          title: Text(localizations.pasteFromClipboard),
+          content: Text(localizations.pasteReplaceOrAppendMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: Text('Append'),
+              child: Text(localizations.append),
             ),
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: Text('Replace'),
+              child: Text(localizations.replace),
             ),
              TextButton(
               onPressed: () => Navigator.of(ctx).pop(null),
-              child: Text('Cancel'),
+              child: Text(localizations.cancel),
             ),
           ],
         ),
@@ -749,7 +797,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       if (shouldReplaceNullable == null) {
         if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Paste operation cancelled.')),
+                // CHANGED: Use localized text
+                SnackBar(content: Text(localizations.pasteOperationCancelled)),
             );
         }
         return;
@@ -794,7 +843,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
       if (newEntriesPasted.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('No valid Q&A pairs found in clipboard using detected format.')),
+            // CHANGED: Use localized text
+            SnackBar(content: Text(localizations.noValidQAPairsFound)),
           );
         }
         return;
@@ -825,27 +875,31 @@ class _MemorlyHomeState extends State<MemorlyHome> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error pasting from clipboard: $e')),
+          // CHANGED: Use localized text with error
+          SnackBar(content: Text(localizations.errorPastingFromClipboard(e.toString()))),
         );
       }
     }
   }
 
   void _generateTestFile() {
+    final localizations = AppLocalizations.of(context)!;
+    
     if (!saved && entries.isNotEmpty) {
       showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: Text('Unsaved Changes'),
-          content: Text('You have unsaved changes. Generating a test file will clear them. Proceed?'),
+          // CHANGED: Use localized text
+          title: Text(localizations.unsavedChanges),
+          content: Text(localizations.unsavedChangesTestFileMessage),
           actions: [
-            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text('No')),
+            TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: Text(localizations.no)),
             TextButton(
                 onPressed: () {
                   Navigator.of(ctx).pop(true);
                   _performGenerateTestFile();
                 },
-                child: Text('Yes')),
+                child: Text(localizations.yes)),
           ],
         ),
       ).then((proceed) {
@@ -857,6 +911,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
   }
 
   void _performGenerateTestFile() {
+    final localizations = AppLocalizations.of(context)!;
+    
     setState(() {
       entries.clear();
       for (int i = 1; i <= 30; i++) {
@@ -870,7 +926,8 @@ class _MemorlyHomeState extends State<MemorlyHome> {
     });
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Generated 30 new test entries. Click "Add/Edit Entries" to view.')),
+        // CHANGED: Use localized text
+        SnackBar(content: Text(localizations.generatedTestEntriesMessage)),
       );
     }
   }

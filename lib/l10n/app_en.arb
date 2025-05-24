@@ -1,0 +1,54 @@
+{
+  "appTitle": "Memorly",
+  "forget": "Forget",
+  "edit": "Edit",
+  "test": "Test", 
+  "cloud": "Cloud",
+  "drill": "Drill",
+  "options": "Options",
+  "help": "Help",
+  "loggedOutSuccessfully": "Logged out successfully",
+  "mustBeLoggedInToSave": "You must be logged in to save a new sheet.",
+  "loginRequiredToDelete": "Login required to delete sheets.",
+  "loginRequiredToRename": "Login required to rename sheets.", 
+  "loginRequiredToLoad": "Login required to load your sheets.",
+  "noEntriesToCopy": "No entries to copy.",
+  "commasDetectedInEntries": "Commas Detected in Entries",
+  "commasDetectedMessage": "Your entries contain commas. How would you like to format the text for the clipboard?",
+  "lineByLineFormat": "Line by Line (Q then A)",
+  "removeCommasFormat": "Remove Commas (Q,A)",
+  "cancel": "Cancel",
+  "copyOperationCancelled": "Copy operation cancelled.",
+  "copiedEntriesToClipboard": "Copied {count} entries to clipboard",
+  "@copiedEntriesToClipboard": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nothingCopiedToClipboard": "Nothing was copied to clipboard.",
+  "unsavedChanges": "Unsaved Changes",
+  "unsavedChangesNewFileMessage": "You have unsaved changes. Proceeding will clear them. Continue?",
+  "no": "No",
+  "yes": "Yes", 
+  "memoryClearedMessage": "Memory cleared. Ready for new entries.",
+  "clipboardIsEmpty": "Clipboard is empty",
+  "clipboardNoProcessableContent": "Clipboard contains no processable content.",
+  "pasteFromClipboard": "Paste from Clipboard",
+  "pasteReplaceOrAppendMessage": "Do you want to replace existing entries or append to them?",
+  "append": "Append",
+  "replace": "Replace",
+  "pasteOperationCancelled": "Paste operation cancelled.",
+  "noValidQAPairsFound": "No valid Q&A pairs found in clipboard using detected format.",
+  "errorPastingFromClipboard": "Error pasting from clipboard: {error}",
+  "@errorPastingFromClipboard": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "unsavedChangesTestFileMessage": "You have unsaved changes. Generating a test file will clear them. Proceed?",
+  "generatedTestEntriesMessage": "Generated 30 new test entries. Click \"Add/Edit Entries\" to view."
+}

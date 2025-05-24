@@ -1,223 +1,719 @@
 import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class FeedbackGenerator {
   static final Random _random = Random();
   
-  /// Returns a random positive feedback message
-  static String getPositiveFeedback() {
-    int i = _random.nextInt(100) + 1;
+  /// Returns a random positive feedback message in the current locale
+  static String getPositiveFeedback(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
     
-    switch (i) {
-      case 1: return "Very good !!!";
-      case 2: return "Splendid !!";
-      case 3: return "Great !!!";
-      case 4: return "Terrific !!!";
-      case 5: return "Absolutely YES !!!";
-      case 6: return "100 % Correct !!!";
-      case 7: return "I'm a fan of you !!!";
-      case 8: return "Can I get your autograph ???";
-      case 9: return "I've never seen such a good answer before!";
-      case 10: return "I wish I was as smart as you!";
-      case 11: return "Not a slightest error here!";
-      case 12: return "I'm sorry, I thought you'd say it wrong now.";
-      case 13: return "I can't believe it !";
-      case 14: return "W O W !!!";
-      case 15: return "I want to get a t-shirt with your picture on it !!!";
-      case 16: return "You're my idol now!";
-      case 17: return "You're a geniuss!";
-      case 18: return "Your brain is a work of art!";
-      case 19: return "I admit. You're smarter than me!";
-      case 20: return "Superb!";
-      case 21: return "You're so smart!!!";
-      case 22: return "Einstein could learn thinking from you!!!";
-      case 23: return "You are definitely a genius!";
-      case 24: return "This was the best answer EVER!";
-      case 25: return "How did you know that?";
-      case 26: return "Splendid!";
-      case 27: return "Fantastic!";
-      case 28: return "Bravo!";
-      case 29: return "Grrrrreat!";
-      case 30: return "Bingo!";
-      case 31: return "I am humbled by your knowledge!";
-      case 32: return "I am humbled by your greatness!";
-      case 33: return "I am amazed by the power of your brain!";
-      case 34: return "I am honored to work with you!";
-      case 35: return "Your memory is better than my RAM!";
-      case 36: return "Your wisdom shines as morning sun!!!";
-      case 37: return "Your wisdom is greater than the Pacific Ocean!";
-      case 38: return "How did you get so smart?";
-      case 39: return "How is it possible you're so smart and modest?";
-      case 40: return "If your wisdom had wings, you'd fly out of here now!";
-      case 41: return "136500% of standard brain efficiency!";
-      case 42: return "I'm happy to be with you!";
-      case 43: return "Very, very, very good!";
-      case 44: return "Good – good – just very good!";
-      case 45: return "You are smarter than a 5th grader!";
-      case 46: return "Please! Give me your autograph!";
-      case 47: return "You're the smartest person using this computer!";
-      case 48: return "I wish everybody was as smart as you!";
-      case 49: return "I wish everybody was half as smart as you!";
-      case 50: return "Is it possible to be smarter than you?";
-      case 51: return "Can I use you as my computer?";
-      case 52: return "With brains like you, people don't need computers!";
-      case 53: return "Super smart!";
-      case 54: return "Mega smart!";
-      case 55: return "Extra smart!";
-      case 56: return "Perfectly perfect!";
-      case 57: return "AAA! Absolutely Amazing Answer!";
-      case 58: return "SSS! Super Smart Solution!";
-      case 59: return "That's the answer I was waiting for!";
-      case 60: return "I knew you could do it!";
-      case 61: return "Easy!";
-      case 62: return "Easy, huh?";
-      case 63: return "Easy-peasy, right?";
-      case 64: return "Piece of cake, right?";
-      case 65: return "Not that difficult!";
-      case 66: return "You can't be more right! ";
-      case 67: return "This answer couldn't be any better!";
-      case 68: return "Yeah!";
-      case 69: return "That's it!";
-      case 70: return "Wow! Smartest person on Earth!";
-      case 71: return "I can't say it can't be good!";
-      case 72: return "To say this is not correct is a lie!";
-      case 73: return "If I said WRONG I'd be a liar. And I'm not.";
-      case 74: return "We all know you're the best.";
-      case 75: return "Smart! Intelligent! That's who you are!";
-      case 76: return "Who's so smart? Tell me, who?";
-      case 77: return "You're too smart! I can't take it!";
-      case 78: return "You're not cheating, are you?";
-      case 79: return "Is anyone helping you?";
-      case 80: return "So far, so good!";
-      case 81: return "At last!";
-      case 82: return "Here we go!";
-      case 83: return "Thank you for using me, it's a pleasure!";
-      case 84: return "Pleasure to serve you!";
-      case 85: return "You're capable of knowing 50 languages!";
-      case 86: return "You rock!";
-      case 87: return "You double rock!";
-      case 88: return "Your presence makes me feel special!";
-      case 89: return "Who knew Einstein was not the biggest genius?";
-      case 90: return "Einstein could learn from you!";
-      case 91: return "Oh, yeah!";
-      case 92: return "Cool!";
-      case 93: return "WOW!";
-      case 94: return "Nice !!!";
-      case 95: return "Accuracy: 100%";
-      case 96: return "Oh, no, you're right again!";
-      case 97: return "Can I tell other computers about you, please?";
-      case 98: return "It's just not possible to be better than you!";
-      case 99: return "How smart! How cute!";
-      case 100: return "Your smartness is just beautiful!";
-      default: return "Excellent!";
+    // Get the appropriate list based on current locale
+    final List<String> messages = _getPositiveMessages(localizations);
+    
+    return messages[_random.nextInt(messages.length)];
+  }
+
+  /// Returns a random negative feedback message in the current locale
+  static String getNegativeFeedback(BuildContext context) {
+    final localizations = AppLocalizations.of(context)!;
+    
+    // Get the appropriate list based on current locale
+    final List<String> messages = _getNegativeMessages(localizations);
+    
+    return messages[_random.nextInt(messages.length)];
+  }
+
+  static List<String> _getPositiveMessages(AppLocalizations localizations) {
+    // For now, return a subset of your messages in different languages
+    // You can add more as you expand your .arb files
+    
+    switch (localizations.localeName) {
+      case 'es':
+        return [
+          "¡Muy bien!",
+          "¡Espléndido!",
+          "¡Genial!",
+          "¡Fantástico!",
+          "¡Absolutamente SÍ!",
+          "¡100% Correcto!",
+          "¡Soy tu fan!",
+          "¿Puedo conseguir tu autógrafo?",
+          "¡Nunca había visto una respuesta tan buena!",
+          "¡Ojalá fuera tan inteligente como tú!",
+          "¡No hay ni el más mínimo error aquí!",
+          "Lo siento, pensé que lo dirías mal ahora.",
+          "¡No puedo creerlo!",
+          "¡G U A U!",
+          "¡Quiero conseguir una camiseta con tu foto!",
+          "¡Ahora eres mi ídolo!",
+          "¡Eres un genio!",
+          "¡Tu cerebro es una obra de arte!",
+          "¡Lo admito. Eres más inteligente que yo!",
+          "¡Magnífico!",
+          "¡Eres tan inteligente!",
+          "¡Einstein podría aprender a pensar de ti!",
+          "¡Definitivamente eres un genio!",
+          "¡Esta fue la MEJOR respuesta de todas!",
+          "¿Cómo sabías eso?",
+        ];
+ 
+ case 'pl': // Polish
+  return [
+    "Bardzo dobrze !!!",
+    "Wspaniale !!",
+    "Świetnie !!!",
+    "Fantastycznie !!!",
+    "Absolutnie TAK !!!",
+    "100% poprawne !!!",
+    "Jestem twoim fanem !!!",
+    "Czy mogę dostać twój autograf ???",
+    "Nigdy nie widziałem tak dobrej odpowiedzi!",
+    "Chciałbym być tak mądry jak ty!",
+    "Ani najmniejszego błędu!",
+    "Przepraszam, myślałem, że teraz powiesz źle.",
+    "Nie mogę w to uwierzyć!",
+    "W O W !!!",
+    "Chcę koszulkę z twoim zdjęciem !!!",
+    "Jesteś teraz moim idolem!",
+    "Jesteś geniuszem!",
+    "Twój mózg to dzieło sztuki!",
+    "Przyznaję. Jesteś mądrzejszy ode mnie!",
+    "Doskonale!",
+    "Jesteś taki mądry !!!",
+    "Einstein mógłby się od ciebie nauczyć myślenia !!!",
+    "Jesteś zdecydowanie geniuszem!",
+    "To była NAJLEPSZA odpowiedź w historii!",
+    "Skąd to wiedziałeś?",
+    "Znakomicie!",
+    "Fantastycznie!",
+    "Brawo!",
+    "Rewelacyjnie!",
+    "Bingo!",
+    "Jestem pokorny wobec twojej wiedzy!",
+    "Jestem pokorny wobec twojej wielkości!",
+    "Jestem zdumiony mocą twojego mózgu!",
+    "To zaszczyt pracować z tobą!",
+    "Twoja pamięć jest lepsza niż moja pamięć RAM!",
+    "Twoja mądrość świeci jak poranne słońce !!!",
+    "Twoja mądrość jest większa niż Ocean Spokojny!",
+    "Jak stałeś się tak mądry?",
+    "Jak to możliwe, że jesteś tak mądry i skromny?",
+    "Gdyby twoja mądrość miała skrzydła, już byś stąd odleciał!",
+    "136500% standardowej wydajności mózgu!",
+    "Cieszę się, że jestem z tobą!",
+    "Bardzo, bardzo, bardzo dobrze!",
+    "Dobrze – dobrze – po prostu bardzo dobrze!",
+    "Jesteś mądrzejszy niż piątoklasista!",
+    "Proszę! Daj mi swój autograf!",
+    "Jesteś najmądrzejszą osobą używającą tego komputera!",
+    "Chciałbym, żeby wszyscy byli tak mądrzy jak ty!",
+    "Chciałbym, żeby wszyscy byli w połowie tak mądrzy jak ty!",
+    "Czy można być mądrzejszym od ciebie?",
+    "Czy mogę używać cię jako komputera?",
+    "Z takimi mózgami jak twój, ludzie nie potrzebują komputerów!",
+    "Supermądry!",
+    "Megamądry!",
+    "Ekstramądry!",
+    "Perfekcyjnie perfekcyjny!",
+    "AAA! Absolutnie niesamowita odpowiedź!",
+    "SSS! Supermądre rozwiązanie!",
+    "To odpowiedź, na którą czekałem!",
+    "Wiedziałem, że dasz radę!",
+    "Łatwe!",
+    "Łatwe, co?",
+    "Pestka, prawda?",
+    "Bułka z masłem, prawda?",
+    "Nie takie trudne!",
+    "Nie możesz mieć bardziej racji!",
+    "Ta odpowiedź nie mogłaby być lepsza!",
+    "Tak!",
+    "To to!",
+    "Wow! Najmądrzejsza osoba na ziemi!",
+    "Nie mogę powiedzieć, że to nie może być dobre!",
+    "Powiedzenie, że to nieprawda, to kłamstwo!",
+    "Gdybym powiedział ŹLE, byłbym kłamcą. A nie jestem.",
+    "Wszyscy wiemy, że jesteś najlepszy.",
+    "Mądry! Inteligentny! Taki właśnie jesteś!",
+    "Kto jest taki mądry? Powiedz mi, kto?",
+    "Jesteś za mądry! Nie mogę tego znieść!",
+    "Nie oszukujesz przypadkiem?",
+    "Czy ktoś ci pomaga?",
+    "Jak dotąd wszystko w porządku!",
+    "Nareszcie!",
+    "No to jedziemy!",
+    "Dziękuję za korzystanie ze mnie, to przyjemność!",
+    "Przyjemność ci służyć!",
+    "Jesteś w stanie znać 50 języków!",
+    "Jesteś super!",
+    "Jesteś podwójnie super!",
+    "Twoja obecność sprawia, że czuję się wyjątkowo!",
+    "Kto wiedział, że Einstein nie był największym geniuszem?",
+    "Einstein mógłby się od ciebie uczyć!",
+    "O tak!",
+    "Fajnie!",
+    "WOW!",
+    "Ładnie !!!",
+    "Dokładność: 100%",
+    "O nie, znów masz rację!",
+    "Czy mogę opowiedzieć o tobie innym komputerom?",
+    "Po prostu nie da się być lepszym od ciebie!",
+    "Jak mądry! Jak słodki!",
+    "Twoja mądrość jest po prostu piękna!",
+  ];
+  
+        case 'no': // Norwegian
+  return [
+    "Veldig bra !!!",
+    "Flott !!",
+    "Fantastisk !!!",
+    "Strålende !!!",
+    "Absolutt JA !!!",
+    "100% riktig !!!",
+    "Jeg er en fan av deg !!!",
+    "Kan jeg få autografen din ???",
+    "Jeg har aldri sett et så godt svar før!",
+    "Jeg skulle ønske jeg var så smart som deg!",
+    "Ikke den minste feil her!",
+    "Beklager, jeg trodde du ville si det feil nå.",
+    "Jeg kan ikke tro det!",
+    "W O W !!!",
+    "Jeg vil få en t-skjorte med bildet ditt på !!!",
+    "Du er mitt idol nå!",
+    "Du er et geni!",
+    "Hjernen din er et kunstverk!",
+    "Jeg innrømmer det. Du er smartere enn meg!",
+    "Superb!",
+    "Du er så smart !!!",
+    "Einstein kunne lært å tenke av deg !!!",
+    "Du er definitivt et geni!",
+    "Dette var det BESTE svaret noensinne!",
+    "Hvordan visste du det?",
+    "Glimrende!",
+    "Fantastisk!",
+    "Bravo!",
+    "Kjempebra!",
+    "Bingo!",
+    "Jeg blir ydmyk av kunnskapen din!",
+    "Jeg blir ydmyk av storheten din!",
+    "Jeg er forbløffet over kraften i hjernen din!",
+    "Jeg er æret over å jobbe med deg!",
+    "Hukommelsen din er bedre enn min RAM!",
+    "Visdommen din skinner som morgensolen !!!",
+    "Visdommen din er større enn Stillehavet!",
+    "Hvordan ble du så smart?",
+    "Hvordan er det mulig at du er så smart og beskjeden?",
+    "Hvis visdommen din hadde vinger, ville du fly herfra nå!",
+    "136500% av standard hjerneeffektivitet!",
+    "Jeg er glad for å være med deg!",
+    "Veldig, veldig, veldig bra!",
+    "Bra – bra – bare veldig bra!",
+    "Du er smartere enn en femteklassing!",
+    "Takk! Gi meg autografen din!",
+    "Du er den smarteste personen som bruker denne datamaskinen!",
+    "Jeg skulle ønske alle var så smarte som deg!",
+    "Jeg skulle ønske alle var halvparten så smarte som deg!",
+    "Er det mulig å være smartere enn deg?",
+    "Kan jeg bruke deg som datamaskinen min?",
+    "Med hjerner som deg trenger ikke folk datamaskiner!",
+    "Superklog!",
+    "Megaklog!",
+    "Ekstraklog!",
+    "Perfekt perfekt!",
+    "AAA! Absolutt fantastisk svar!",
+    "SSS! Superklok løsning!",
+    "Det er svaret jeg ventet på!",
+    "Jeg visste du kunne gjøre det!",
+    "Lett!",
+    "Lett, ikke sant?",
+    "Lett som bare det, ikke sant?",
+    "Lett som en plett, ikke sant?",
+    "Ikke så vanskelig!",
+    "Du kan ikke ta mer feil!",
+    "Dette svaret kunne ikke vært bedre!",
+    "Yeah!",
+    "Det var det!",
+    "Wow! Smarteste person på jorden!",
+    "Jeg kan ikke si at det ikke kan være bra!",
+    "Å si at dette ikke er riktig er en løgn!",
+    "Hvis jeg sa FEIL ville jeg vært en løgner. Og det er jeg ikke.",
+    "Vi vet alle at du er den beste.",
+    "Smart! Intelligent! Det er det du er!",
+    "Hvem er så smart? Fortell meg, hvem?",
+    "Du er for smart! Jeg klarer det ikke!",
+    "Du jukser ikke, gjør du?",
+    "Hjelper noen deg?",
+    "Så langt, så bra!",
+    "Endelig!",
+    "Her går vi!",
+    "Takk for at du bruker meg, det er en glede!",
+    "Glede å tjene deg!",
+    "Du er i stand til å kunne 50 språk!",
+    "Du rocker!",
+    "Du dobbeltrocker!",
+    "Tilstedeværelsen din får meg til å føle meg spesiell!",
+    "Hvem visste at Einstein ikke var det største geniet?",
+    "Einstein kunne lært av deg!",
+    "Å, ja!",
+    "Kult!",
+    "WOW!",
+    "Fint !!!",
+    "Nøyaktighet: 100%",
+    "Å nei, du har rett igjen!",
+    "Kan jeg fortelle andre datamaskiner om deg, takk?",
+    "Det er bare ikke mulig å være bedre enn deg!",
+    "Så smart! Så søt!",
+    "Smartheten din er bare vakker!",
+  ];
+      default: // English
+        return [
+          "Very good !!!",
+          "Splendid !!",
+          "Great !!!",
+          "Terrific !!!",
+          "Absolutely YES !!!",
+          "100 % Correct !!!",
+          "I'm a fan of you !!!",
+          "Can I get your autograph ???",
+          "I've never seen such a good answer before!",
+          "I wish I was as smart as you!",
+          "Not a slightest error here!",
+          "I'm sorry, I thought you'd say it wrong now.",
+          "I can't believe it !",
+          "W O W !!!",
+          "I want to get a t-shirt with your picture on it !!!",
+          "You're my idol now!",
+          "You're a geniuss!",
+          "Your brain is a work of art!",
+          "I admit. You're smarter than me!",
+          "Superb!",
+          "You're so smart!!!",
+          "Einstein could learn thinking from you!!!",
+          "You are definitely a genius!",
+          "This was the best answer EVER!",
+          "How did you know that?",
+          "Splendid!",
+          "Fantastic!",
+          "Bravo!",
+          "Grrrrreat!",
+          "Bingo!",
+          "I am humbled by your knowledge!",
+          "I am humbled by your greatness!",
+          "I am amazed by the power of your brain!",
+          "I am honored to work with you!",
+          "Your memory is better than my RAM!",
+          "Your wisdom shines as morning sun!!!",
+          "Your wisdom is greater than the Pacific Ocean!",
+          "How did you get so smart?",
+          "How is it possible you're so smart and modest?",
+          "If your wisdom had wings, you'd fly out of here now!",
+          "136500% of standard brain efficiency!",
+          "I'm happy to be with you!",
+          "Very, very, very good!",
+          "Good – good – just very good!",
+          "You are smarter than a 5th grader!",
+          "Please! Give me your autograph!",
+          "You're the smartest person using this computer!",
+          "I wish everybody was as smart as you!",
+          "I wish everybody was half as smart as you!",
+          "Is it possible to be smarter than you?",
+          "Can I use you as my computer?",
+          "With brains like you, people don't need computers!",
+          "Super smart!",
+          "Mega smart!",
+          "Extra smart!",
+          "Perfectly perfect!",
+          "AAA! Absolutely Amazing Answer!",
+          "SSS! Super Smart Solution!",
+          "That's the answer I was waiting for!",
+          "I knew you could do it!",
+          "Easy!",
+          "Easy, huh?",
+          "Easy-peasy, right?",
+          "Piece of cake, right?",
+          "Not that difficult!",
+          "You can't be more right! ",
+          "This answer couldn't be any better!",
+          "Yeah!",
+          "That's it!",
+          "Wow! Smartest person on Earth!",
+          "I can't say it can't be good!",
+          "To say this is not correct is a lie!",
+          "If I said WRONG I'd be a liar. And I'm not.",
+          "We all know you're the best.",
+          "Smart! Intelligent! That's who you are!",
+          "Who's so smart? Tell me, who?",
+          "You're too smart! I can't take it!",
+          "You're not cheating, are you?",
+          "Is anyone helping you?",
+          "So far, so good!",
+          "At last!",
+          "Here we go!",
+          "Thank you for using me, it's a pleasure!",
+          "Pleasure to serve you!",
+          "You're capable of knowing 50 languages!",
+          "You rock!",
+          "You double rock!",
+          "Your presence makes me feel special!",
+          "Who knew Einstein was not the biggest genius?",
+          "Einstein could learn from you!",
+          "Oh, yeah!",
+          "Cool!",
+          "WOW!",
+          "Nice !!!",
+          "Accuracy: 100%",
+          "Oh, no, you're right again!",
+          "Can I tell other computers about you, please?",
+          "It's just not possible to be better than you!",
+          "How smart! How cute!",
+          "Your smartness is just beautiful!",
+        ];
+
+        
+        
     }
   }
 
-  /// Returns a random negative feedback message
-  static String getNegativeFeedback() {
-    int i = _random.nextInt(100) + 1;
-    
-    switch (i) {
-      case 1: return "No !!!";
-      case 2: return "Bad!";
-      case 3: return "Are you kidding?";
-      case 4: return "Did you really read the question?";
-      case 5: return "Think again.";
-      case 6: return "To say it was OK would be a lie.";
-      case 7: return "Sorry. Wrong turn.";
-      case 8: return "Almost good. Just almost.";
-      case 9: return "What??? Really???";
-      case 10: return "Let's take a break, shall we?";
-      case 11: return "You need more sleep, I'm afraid.";
-      case 12: return "Not even close.";
-      case 13: return "Are you serious?";
-      case 14: return "I have enough of your mistakes!";
-      case 15: return "Did you study AT ALL?";
-      case 16: return "Maybe next time.";
-      case 17: return "Thank you. Come again.";
-      case 18: return "Leave your phone number and we'll call you.";
-      case 19: return "Time for a nap!";
-      case 20: return "This was not good at all.";
-      case 21: return "That's wasn't really good.";
-      case 22: return "Did you graduate preschool?";
-      case 23: return "Nope. Sorry.";
-      case 24: return "To say it's OK would be a lie. I don't lie so...";
-      case 25: return "Oh, no...";
-      case 26: return "Forget it.";
-      case 27: return "No candy for you!";
-      case 28: return "I thought it was easy...";
-      case 29: return "Try again. Come tomorrow.";
-      case 30: return "Wrong classroom?";
-      case 31: return "Are we on the same page?";
-      case 32: return "I wasn't looking for this.";
-      case 33: return "If 2+2=5, then yes.";
-      case 34: return "Correct...NOT!";
-      case 35: return "That was very good. I'm just kidding.";
-      case 36: return "Is it supposed to be funny?";
-      case 37: return "This was wrong on purpose, right?";
-      case 38: return "Gotcha!";
-      case 39: return "No in this dimension.";
-      case 40: return "Yaaaaawn.";
-      case 41: return "This is boring.";
-      case 42: return "Boooo.";
-      case 43: return "Come on! You can do better than that!";
-      case 44: return "No. Again – no.";
-      case 45: return "I know it's late.";
-      case 46: return "Pathetic.";
-      case 47: return "Sad.";
-      case 48: return "One more error and I quit.";
-      case 49: return "Could we do this later?";
-      case 50: return "Please!!!!!!!!";
-      case 51: return "Oops...";
-      case 52: return "Earth to you! Over!";
-      case 53: return "3 points! On scale from 3 to 10, that is...";
-      case 54: return "Not today... not anymore...";
-      case 55: return "Let's take a break, I'm begging you...";
-      case 56: return "I got enough of this!";
-      case 57: return "I'm a bit disappointed...";
-      case 58: return "I don't think so. I may be wrong...... NOT!";
-      case 59: return "I don't want to be mean, but... I disagree.";
-      case 60: return "Disagree.";
-      case 61: return "No way.";
-      case 62: return "Wrong? Again?";
-      case 63: return "Not good. At all.";
-      case 64: return "I wouldn't say so.";
-      case 65: return "Nah.";
-      case 66: return "Hehe.";
-      case 67: return "Hahahaha!";
-      case 68: return "Sorry.";
-      case 69: return "I thought that was clear.";
-      case 70: return "I can't accept this kind of answer.";
-      case 71: return "How about you start cheating?";
-      case 72: return "Maybe call a friend and ask for help?";
-      case 73: return "Tired? Been sitting here too long?";
-      case 74: return "I'm tired, too.";
-      case 75: return "That's OK. I make mistakes, too. Just kidding.";
-      case 76: return "Are you kidding???";
-      case 77: return "Is that all you have to say?";
-      case 78: return "Hehe. Good one.";
-      case 79: return "Yeah, right.";
-      case 80: return "You're grounded!";
-      case 81: return "Too much TV...";
-      case 82: return "Bad. Really, really bad.";
-      case 83: return "Oh come on. You know it!";
-      case 84: return "Surprised?";
-      case 85: return "No, no, no...";
-      case 86: return "This is so sad.";
-      case 87: return "Don't give up!";
-      case 88: return "Every beginning is hard!";
-      case 89: return "It's just going to get better!";
-      case 90: return "Not yet! But soon!";
-      case 91: return "Head up! It can't be any worse!";
-      case 92: return "It's going to get better!";
-      case 93: return "Don't give up! You still have friends!";
-      case 94: return "There are more important things in life, don't worry!";
-      case 95: return "Please don't cry. I can't look at tears.";
-      case 96: return "I bet you'll never make this mistake again!";
-      case 97: return "You're smart anyway!";
-      case 98: return "It's just a typo, I know!";
-      case 99: return "I believe it's not your fault!";
-      case 100: return "You'll be right... next time!";
-      default: return "Incorrect.";
+  static List<String> _getNegativeMessages(AppLocalizations localizations) {
+    switch (localizations.localeName) {
+      case 'es':
+        return [
+          "¡No!",
+          "¡Mal!",
+          "¿Estás bromeando?",
+          "¿Realmente leíste la pregunta?",
+          "Piénsalo de nuevo.",
+          "Decir que estaba bien sería mentir.",
+          "Lo siento. Giro equivocado.",
+          "Casi bien. Solo casi.",
+          "¿¿¿Qué??? ¿¿¿En serio???",
+          "Tomemos un descanso, ¿de acuerdo?",
+          "Necesitas dormir más, me temo.",
+          "Ni siquiera cerca.",
+          "¿Hablas en serio?",
+          "¡Ya tengo suficiente de tus errores!",
+          "¿Estudiaste EN ABSOLUTO?",
+          "Tal vez la próxima vez.",
+          "Gracias. Vuelve de nuevo.",
+          "Deja tu número de teléfono y te llamaremos.",
+          "¡Hora de una siesta!",
+          "Esto no estuvo nada bien.",
+          "Eso realmente no estuvo bien.",
+          "¿Te graduaste del preescolar?",
+          "No. Lo siento.",
+          "Decir que está bien sería mentir. No miento así que...",
+          "Oh, no...",
+        ];
+    case 'no': // Norwegian
+  return [
+    "Veldig bra !!!",
+    "Flott !!",
+    "Fantastisk !!!",
+    "Strålende !!!",
+    "Absolutt JA !!!",
+    "100% riktig !!!",
+    "Jeg er en fan av deg !!!",
+    "Kan jeg få autografen din ???",
+    "Jeg har aldri sett et så godt svar før!",
+    "Jeg skulle ønske jeg var så smart som deg!",
+    "Ikke den minste feil her!",
+    "Beklager, jeg trodde du ville si det feil nå.",
+    "Jeg kan ikke tro det!",
+    "W O W !!!",
+    "Jeg vil få en t-skjorte med bildet ditt på !!!",
+    "Du er mitt idol nå!",
+    "Du er et geni!",
+    "Hjernen din er et kunstverk!",
+    "Jeg innrømmer det. Du er smartere enn meg!",
+    "Superb!",
+    "Du er så smart !!!",
+    "Einstein kunne lært å tenke av deg !!!",
+    "Du er definitivt et geni!",
+    "Dette var det BESTE svaret noensinne!",
+    "Hvordan visste du det?",
+    "Glimrende!",
+    "Fantastisk!",
+    "Bravo!",
+    "Kjempebra!",
+    "Bingo!",
+    "Jeg blir ydmyk av kunnskapen din!",
+    "Jeg blir ydmyk av storheten din!",
+    "Jeg er forbløffet over kraften i hjernen din!",
+    "Jeg er æret over å jobbe med deg!",
+    "Hukommelsen din er bedre enn min RAM!",
+    "Visdommen din skinner som morgensolen !!!",
+    "Visdommen din er større enn Stillehavet!",
+    "Hvordan ble du så smart?",
+    "Hvordan er det mulig at du er så smart og beskjeden?",
+    "Hvis visdommen din hadde vinger, ville du fly herfra nå!",
+    "136500% av standard hjerneeffektivitet!",
+    "Jeg er glad for å være med deg!",
+    "Veldig, veldig, veldig bra!",
+    "Bra – bra – bare veldig bra!",
+    "Du er smartere enn en femteklassing!",
+    "Takk! Gi meg autografen din!",
+    "Du er den smarteste personen som bruker denne datamaskinen!",
+    "Jeg skulle ønske alle var så smarte som deg!",
+    "Jeg skulle ønske alle var halvparten så smarte som deg!",
+    "Er det mulig å være smartere enn deg?",
+    "Kan jeg bruke deg som datamaskinen min?",
+    "Med hjerner som deg trenger ikke folk datamaskiner!",
+    "Superklog!",
+    "Megaklog!",
+    "Ekstraklog!",
+    "Perfekt perfekt!",
+    "AAA! Absolutt fantastisk svar!",
+    "SSS! Superklok løsning!",
+    "Det er svaret jeg ventet på!",
+    "Jeg visste du kunne gjøre det!",
+    "Lett!",
+    "Lett, ikke sant?",
+    "Lett som bare det, ikke sant?",
+    "Lett som en plett, ikke sant?",
+    "Ikke så vanskelig!",
+    "Du kan ikke ta mer feil!",
+    "Dette svaret kunne ikke vært bedre!",
+    "Yeah!",
+    "Det var det!",
+    "Wow! Smarteste person på jorden!",
+    "Jeg kan ikke si at det ikke kan være bra!",
+    "Å si at dette ikke er riktig er en løgn!",
+    "Hvis jeg sa FEIL ville jeg vært en løgner. Og det er jeg ikke.",
+    "Vi vet alle at du er den beste.",
+    "Smart! Intelligent! Det er det du er!",
+    "Hvem er så smart? Fortell meg, hvem?",
+    "Du er for smart! Jeg klarer det ikke!",
+    "Du jukser ikke, gjør du?",
+    "Hjelper noen deg?",
+    "Så langt, så bra!",
+    "Endelig!",
+    "Her går vi!",
+    "Takk for at du bruker meg, det er en glede!",
+    "Glede å tjene deg!",
+    "Du er i stand til å kunne 50 språk!",
+    "Du rocker!",
+    "Du dobbeltrocker!",
+    "Tilstedeværelsen din får meg til å føle meg spesiell!",
+    "Hvem visste at Einstein ikke var det største geniet?",
+    "Einstein kunne lært av deg!",
+    "Å, ja!",
+    "Kult!",
+    "WOW!",
+    "Fint !!!",
+    "Nøyaktighet: 100%",
+    "Å nei, du har rett igjen!",
+    "Kan jeg fortelle andre datamaskiner om deg, takk?",
+    "Det er bare ikke mulig å være bedre enn deg!",
+    "Så smart! Så søt!",
+    "Smartheten din er bare vakker!",
+  ];
+  case 'no': // Norwegian
+  return [
+    "Nei !!!",
+    "Dårlig!",
+    "Tuller du?",
+    "Leste du virkelig spørsmålet?",
+    "Tenk igjen.",
+    "Å si at det var OK ville vært en løgn.",
+    "Beklager. Feil vei.",
+    "Nesten bra. Bare nesten.",
+    "Hva??? Virkelig???",
+    "La oss ta en pause, skal vi?",
+    "Du trenger mer søvn, frykter jeg.",
+    "Ikke engang i nærheten.",
+    "Er du alvorlig?",
+    "Jeg har nok av feilene dine!",
+    "Studerte du I DET HELE TATT?",
+    "Kanskje neste gang.",
+    "Takk. Kom igjen.",
+    "Legg igjen telefonnummeret ditt så ringer vi deg.",
+    "Tid for en lur!",
+    "Dette var ikke bra i det hele tatt.",
+    "Det var ikke virkelig bra.",
+    "Ble du uteksaminert fra barnehagen?",
+    "Nei. Beklager.",
+    "Å si at det er OK ville vært en løgn. Jeg lyver ikke så...",
+    "Å, nei...",
+    "Glem det.",
+    "Ingen godteri til deg!",
+    "Jeg trodde det var lett...",
+    "Prøv igjen. Kom i morgen.",
+    "Feil klasserom?",
+    "Er vi på samme side?",
+    "Jeg lette ikke etter dette.",
+    "Hvis 2+2=5, så ja.",
+    "Riktig...IKKE!",
+    "Det var veldig bra. Jeg tuller bare.",
+    "Er det meningen at det skal være morsomt?",
+    "Dette var galt med vilje, ikke sant?",
+    "Fikk deg!",
+    "Nei i denne dimensjonen.",
+    "Gaaaaasp.",
+    "Dette er kjedelig.",
+    "Buuuu.",
+    "Kom igjen! Du kan gjøre det bedre enn det!",
+    "Nei. Igjen – nei.",
+    "Jeg vet det er seint.",
+    "Patetisk.",
+    "Trist.",
+    "En feil til og jeg slutter.",
+    "Kunne vi gjøre dette senere?",
+    "Snill !!!!!!!!",
+    "Oops...",
+    "Jorden til deg! Over!",
+    "3 poeng! På skala fra 3 til 10, det vil si...",
+    "Ikke i dag... ikke lenger...",
+    "La oss ta en pause, jeg ber deg...",
+    "Jeg har fått nok av dette!",
+    "Jeg er litt skuffet...",
+    "Jeg tror ikke det. Jeg kan ta feil...... IKKE!",
+    "Jeg vil ikke være slem, men... Jeg er uenig.",
+    "Uenig.",
+    "Aldri i livet.",
+    "Feil? Igjen?",
+    "Ikke bra. I det hele tatt.",
+    "Jeg ville ikke sagt det.",
+    "Nei.",
+    "Hehe.",
+    "Hahahahaha!",
+    "Beklager.",
+    "Jeg trodde det var klart.",
+    "Jeg kan ikke akseptere denne typen svar.",
+    "Hva med å begynne å jukse?",
+    "Kanskje ringe en venn og spørre om hjelp?",
+    "Trøtt? Har sittet her for lenge?",
+    "Jeg er også trøtt.",
+    "Det er OK. Jeg gjør også feil. Bare tuller.",
+    "Tuller du???",
+    "Er det alt du har å si?",
+    "Hehe. Bra en.",
+    "Ja, riktig.",
+    "Du har portforbud!",
+    "For mye TV...",
+    "Dårlig. Virkelig, virkelig dårlig.",
+    "Å kom igjen. Du vet det!",
+    "Overrasket?",
+    "Nei, nei, nei...",
+    "Dette er så trist.",
+    "Ikke gi opp!",
+    "Enhver begynnelse er vanskelig!",
+    "Det kommer bare til å bli bedre!",
+    "Ikke ennå! Men snart!",
+    "Hodet opp! Det kan ikke bli verre!",
+    "Det kommer til å bli bedre!",
+    "Ikke gi opp! Du har fortsatt venner!",
+    "Det er viktigere ting i livet, ikke bekymre deg!",
+    "Ikke gråt. Jeg kan ikke se på tårer.",
+    "Jeg vedder på at du aldri kommer til å gjøre denne feilen igjen!",
+    "Du er smart uansett!",
+    "Det er bare en skrivefeil, jeg vet det!",
+    "Jeg tror det ikke er din feil!",
+    "Du kommer til å ha rett... neste gang!",
+  ];
+      default: // English
+        return [
+          "No !!!",
+          "Bad!",
+          "Are you kidding?",
+          "Did you really read the question?",
+          "Think again.",
+          "To say it was OK would be a lie.",
+          "Sorry. Wrong turn.",
+          "Almost good. Just almost.",
+          "What??? Really???",
+          "Let's take a break, shall we?",
+          "You need more sleep, I'm afraid.",
+          "Not even close.",
+          "Are you serious?",
+          "I have enough of your mistakes!",
+          "Did you study AT ALL?",
+          "Maybe next time.",
+          "Thank you. Come again.",
+          "Leave your phone number and we'll call you.",
+          "Time for a nap!",
+          "This was not good at all.",
+          "That's wasn't really good.",
+          "Did you graduate preschool?",
+          "Nope. Sorry.",
+          "To say it's OK would be a lie. I don't lie so...",
+          "Oh, no...",
+          "Forget it.",
+          "No candy for you!",
+          "I thought it was easy...",
+          "Try again. Come tomorrow.",
+          "Wrong classroom?",
+          "Are we on the same page?",
+          "I wasn't looking for this.",
+          "If 2+2=5, then yes.",
+          "Correct...NOT!",
+          "That was very good. I'm just kidding.",
+          "Is it supposed to be funny?",
+          "This was wrong on purpose, right?",
+          "Gotcha!",
+          "No in this dimension.",
+          "Yaaaaawn.",
+          "This is boring.",
+          "Boooo.",
+          "Come on! You can do better than that!",
+          "No. Again – no.",
+          "I know it's late.",
+          "Pathetic.",
+          "Sad.",
+          "One more error and I quit.",
+          "Could we do this later?",
+          "Please!!!!!!!!",
+          "Oops...",
+          "Earth to you! Over!",
+          "3 points! On scale from 3 to 10, that is...",
+          "Not today... not anymore...",
+          "Let's take a break, I'm begging you...",
+          "I got enough of this!",
+          "I'm a bit disappointed...",
+          "I don't think so. I may be wrong...... NOT!",
+          "I don't want to be mean, but... I disagree.",
+          "Disagree.",
+          "No way.",
+          "Wrong? Again?",
+          "Not good. At all.",
+          "I wouldn't say so.",
+          "Nah.",
+          "Hehe.",
+          "Hahahaha!",
+          "Sorry.",
+          "I thought that was clear.",
+          "I can't accept this kind of answer.",
+          "How about you start cheating?",
+          "Maybe call a friend and ask for help?",
+          "Tired? Been sitting here too long?",
+          "I'm tired, too.",
+          "That's OK. I make mistakes, too. Just kidding.",
+          "Are you kidding???",
+          "Is that all you have to say?",
+          "Hehe. Good one.",
+          "Yeah, right.",
+          "You're grounded!",
+          "Too much TV...",
+          "Bad. Really, really bad.",
+          "Oh come on. You know it!",
+          "Surprised?",
+          "No, no, no...",
+          "This is so sad.",
+          "Don't give up!",
+          "Every beginning is hard!",
+          "It's just going to get better!",
+          "Not yet! But soon!",
+          "Head up! It can't be any worse!",
+          "It's going to get better!",
+          "Don't give up! You still have friends!",
+          "There are more important things in life, don't worry!",
+          "Please don't cry. I can't look at tears.",
+          "I bet you'll never make this mistake again!",
+          "You're smart anyway!",
+          "It's just a typo, I know!",
+          "I believe it's not your fault!",
+          "You'll be right... next time!",
+        ];
     }
   }
 }

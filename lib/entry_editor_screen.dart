@@ -1,6 +1,9 @@
+
 // © Adaminion 2025 2505220950
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Required for Clipboard
+import 'package:flutter/services.dart';
+// NEW: Import for localization
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EntryEditorScreen extends StatefulWidget {
   final List<Map<String, String>> initialEntries;
@@ -28,7 +31,6 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
   @override
   void initState() {
     super.initState();
-    // Create a deep copy of the initial entries to avoid modifying the original list directly
     _currentEntries = widget.initialEntries.map((entry) => Map<String, String>.from(entry)).toList();
   }
 
@@ -42,9 +44,13 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
   }
 
   void _addEntry() {
+    // NEW: Get localizations
+    final localizations = AppLocalizations.of(context)!;
+    
     if (_qController.text.trim().isEmpty || _aController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Question and Answer cannot be empty.')),
+        // CHANGED: Use localized message
+        SnackBar(content: Text(localizations.questionAndAnswerCannotBeEmpty)),
       );
       return;
     }
@@ -57,58 +63,36 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
     });
   }
 
-  void _startEditEntry(int index) {
-    setState(() {
-      _editingIndex = index;
-      _qController.text = _currentEntries[index]['q']!;
-      _aController.text = _currentEntries[index]['a']!;
-      _qFocusNode.requestFocus();
-    });
-  }
-
-  void _updateEntry() {
-    if (_editingIndex == null) return;
-    if (_qController.text.trim().isEmpty || _aController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Question and Answer cannot be empty for update.')),
-      );
-      return;
-    }
-    setState(() {
-      _currentEntries[_editingIndex!] = {'q': _qController.text.trim(), 'a': _aController.text.trim()};
-      _qController.clear();
-      _aController.clear();
-      _editingIndex = null;
-      _hasChanges = true;
-      _qFocusNode.requestFocus();
-    });
-  }
-
   void _deleteEntry(int index) {
+    // NEW: Get localizations
+    final localizations = AppLocalizations.of(context)!;
+    
     // Confirmation dialog before deleting
     showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Entry?'),
-        content: Text('Are you sure you want to delete the entry: "${_currentEntries[index]['q']}"?'),
+        // CHANGED: Use localized title
+        title: Text(localizations.deleteEntryTitle),
+        // CHANGED: Use localized content with placeholder
+        content: Text(localizations.deleteEntryConfirm(_currentEntries[index]['q']!)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          // CHANGED: Use localized button text
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(localizations.cancel)),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            // CHANGED: Use localized delete text
+            child: Text(localizations.delete, style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
     ).then((confirmed) {
       if (confirmed == true) {
         setState(() {
-          // If deleting the entry currently being edited, clear the form
           if (_editingIndex == index) {
             _qController.clear();
             _aController.clear();
             _editingIndex = null;
           } else if (_editingIndex != null && index < _editingIndex!) {
-            // Adjust editing index if an item before it was deleted
             _editingIndex = _editingIndex! - 1;
           }
           _currentEntries.removeAt(index);
@@ -118,39 +102,37 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
     });
   }
 
-  void _cancelEdit() {
-    setState(() {
-      _qController.clear();
-      _aController.clear();
-      _editingIndex = null;
-      _qFocusNode.requestFocus();
-    });
-  }
-
   Future<bool> _onWillPop() async {
+    // NEW: Get localizations
+    final localizations = AppLocalizations.of(context)!;
+    
     if (_hasChanges) {
       final confirm = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('Unsaved Changes'),
-          content: const Text('You have unsaved changes. Do you want to discard them and go back?'),
+          // CHANGED: Use localized title
+          title: Text(localizations.unsavedChanges),
+          // CHANGED: Use localized content
+          content: Text(localizations.discardChangesMessage),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Stay')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Discard & Go Back')),
+            // CHANGED: Use localized button text
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(localizations.stay)),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: Text(localizations.discardAndGoBack)),
           ],
         ),
       );
       if (confirm == true) {
-        Navigator.pop(context, null); // Return null to indicate no changes should be saved from this screen
-        return false; // Prevent default pop, already handled by explicit Navigator.pop
+        Navigator.pop(context, null);
+        return false;
       }
-      return false; // Stay on the screen, do not pop
+      return false;
     }
-    // If no changes, pop normally. Return null as no changes were made.
     Navigator.pop(context, null);
-    return false; // Prevent default pop, already handled by explicit Navigator.pop
+    return false;
   }
 
+  @override
+ 
   Future<void> _copyAllToClipboard() async {
     if (_currentEntries.isEmpty) {
       if (mounted) {
@@ -420,17 +402,17 @@ class _EntryEditorScreenState extends State<EntryEditorScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 if (_editingIndex != null) ...[
-                  TextButton(onPressed: _cancelEdit, child: const Text('Cancel Edit')),
+                  TextButton(onPressed: _cancelEdit, child: const Text('Cancel')),
                   const SizedBox(width: 8),
                   ElevatedButton.icon(
                     icon: const Icon(Icons.edit_note_outlined), // Changed icon
-                    label: const Text('Update Entry'), 
+                    label: const Text('Save'), 
                     onPressed: _updateEntry,
                   ),
                 ] else ...[
                   ElevatedButton.icon(
                     icon: const Icon(Icons.add_task_outlined), // Changed icon
-                    label: const Text('Add Entry'), 
+                    label: const Text('Addy'), 
                     onPressed: _addEntry,
                   ),
                 ],

@@ -376,23 +376,23 @@ class _FactSheetsScreenState extends State<FactSheetsScreen> with SingleTickerPr
               children: [
                 ElevatedButton.icon(
                   icon: const Icon(Icons.add_circle_outline),
-                  label: const Text('Save Current as New'),
+                  label: const Text('Save'),
                   onPressed: (widget.areMainEntriesEmpty || _isLoading) ? null : _handleCreateNewSheet,
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.file_download_done_outlined),
-                  label: const Text('View/Load Selected'),
+                  label: const Text('Load'),
                   onPressed: _isLoading || !canLoadSelected ? null : _handleLoadSelectedSheet,
                 ),
                 // Rename and Delete only enabled if a user sheet is selected
                 ElevatedButton.icon(
                   icon: const Icon(Icons.drive_file_rename_outline),
-                  label: const Text('Rename Selected'),
+                  label: const Text('Rename'),
                   onPressed: _isLoading || !canModifySelected ? null : _handleRenameSelectedSheet,
                 ),
                 ElevatedButton.icon(
                   icon: const Icon(Icons.delete_sweep_outlined),
-                  label: const Text('Delete Selected'),
+                  label: const Text('Delete'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red[600],
                     foregroundColor: Colors.white
