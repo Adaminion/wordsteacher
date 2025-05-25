@@ -19,9 +19,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get deleteEntryTitle => 'Delete Entry';
 
   @override
-  String deleteEntryConfirm(Object question) {
-    return 'Are you sure you want to delete this entry?';
-  }
+  String get deleteEntryConfirm =>
+      'Are you sure you want to delete this entry?';
 
   @override
   String get delete => 'Delete';
@@ -35,4 +34,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get discardAndGoBack => 'Discard and Go Back';
+
+  @override
+  String get loggedOutSuccessfully => 'Logged out successfully';
+
+  @override
+  String get forget => 'Forget';
+
+  @override
+  String get edit => 'Edit';
 }

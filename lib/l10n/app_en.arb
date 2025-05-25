@@ -1,35 +1,14 @@
 {
   "@@locale": "en",
   "appTitle": "Memorly",
-  "@appTitle": {
-    "description": "The title of the application"
-  },
   "questionAndAnswerCannotBeEmpty": "Question and answer cannot be empty",
-  "@questionAndAnswerCannotBeEmpty": {
-    "description": "Error message when question or answer is empty"
-  },
-  "deleteEntryTitle": "Delete Entry",
-  "@deleteEntryTitle": {
-    "description": "Title for delete entry dialog"
-  },
+  "deleteEntryTitle": "Delete Entry", 
   "deleteEntryConfirm": "Are you sure you want to delete this entry?",
-  "@deleteEntryConfirm": {
-    "description": "Confirmation message for deleting an entry"
-  },
   "delete": "Delete",
-  "@delete": {
-    "description": "Delete button text"
-  },
   "discardChangesMessage": "Are you sure you want to discard your changes?",
-  "@discardChangesMessage": {
-    "description": "Message asking if user wants to discard changes"
-  },
   "stay": "Stay",
-  "@stay": {
-    "description": "Button to stay on current screen"
-  },
   "discardAndGoBack": "Discard and Go Back",
-  "@discardAndGoBack": {
-    "description": "Button to discard changes and go back"
-  }
+  "loggedOutSuccessfully": "Logged out successfully",
+  "forget": "Forget",
+  "edit": "Edit"
 }

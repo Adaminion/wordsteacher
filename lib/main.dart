@@ -1,6 +1,8 @@
 // © Adaminion 2025 2505231723
 
 import 'dart:math';
+import 'auth_screen.dart';
+
 import 'study_screen.dart';
 import 'firestore_manager.dart';
 //import 'package:firebase_storage/firebase_storage.dart';
@@ -23,7 +25,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'l10n/app_localizations.dart';
 
 // Full version string, can be used in About/Help screen
-final String fullVersionString = 'Memorly v.0.9.3 beta - 2505231723';
+final String fullVersionString = 'Memorly v.0.9.333 beta - 2505231723';
 // Shortened title for AppBar
 final String appTitle = 'Memorly';
 

@@ -6,7 +6,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
-import 'app_localizations_no.dart';
 
 // ignore_for_file: type=lint
 
@@ -93,58 +92,73 @@ abstract class AppLocalizations {
       ];
 
   /// A list of this localizations delegate's supported locales.
-  static const List<Locale> supportedLocales = <Locale>[
-    Locale('en'),
-    Locale('no'),
-  ];
+  static const List<Locale> supportedLocales = <Locale>[Locale('en')];
 
-  /// The title of the application
+  /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
   /// **'Memorly'**
   String get appTitle;
 
-  /// Error message when question or answer is empty
+  /// No description provided for @questionAndAnswerCannotBeEmpty.
   ///
   /// In en, this message translates to:
   /// **'Question and answer cannot be empty'**
   String get questionAndAnswerCannotBeEmpty;
 
-  /// Title for delete entry dialog
+  /// No description provided for @deleteEntryTitle.
   ///
   /// In en, this message translates to:
   /// **'Delete Entry'**
   String get deleteEntryTitle;
 
-  /// Confirmation message for deleting an entry
+  /// No description provided for @deleteEntryConfirm.
   ///
   /// In en, this message translates to:
   /// **'Are you sure you want to delete this entry?'**
-  String deleteEntryConfirm(Object question);
+  String get deleteEntryConfirm;
 
-  /// Delete button text
+  /// No description provided for @delete.
   ///
   /// In en, this message translates to:
   /// **'Delete'**
   String get delete;
 
-  /// Message asking if user wants to discard changes
+  /// No description provided for @discardChangesMessage.
   ///
   /// In en, this message translates to:
   /// **'Are you sure you want to discard your changes?'**
   String get discardChangesMessage;
 
-  /// Button to stay on current screen
+  /// No description provided for @stay.
   ///
   /// In en, this message translates to:
   /// **'Stay'**
   String get stay;
 
-  /// Button to discard changes and go back
+  /// No description provided for @discardAndGoBack.
   ///
   /// In en, this message translates to:
   /// **'Discard and Go Back'**
   String get discardAndGoBack;
+
+  /// No description provided for @loggedOutSuccessfully.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged out successfully'**
+  String get loggedOutSuccessfully;
+
+  /// No description provided for @forget.
+  ///
+  /// In en, this message translates to:
+  /// **'Forget'**
+  String get forget;
+
+  /// No description provided for @edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get edit;
 }
 
 class _AppLocalizationsDelegate
@@ -158,7 +172,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'no'].contains(locale.languageCode);
+      <String>['en'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -169,8 +183,6 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
-    case 'no':
-      return AppLocalizationsNo();
   }
 
   throw FlutterError(
