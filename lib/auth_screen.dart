@@ -1,7 +1,7 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'firestore_manager.dart';
+//import 'firestore_manager.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -13,7 +13,7 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   bool rememberMe = false;
 final storage = FlutterSecureStorage();
-final _db = FirestoreManager();
+//final _db = FirestoreManager();
 
 
     @override
@@ -151,7 +151,8 @@ Widget build(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? 'User'}!',
+                            //'Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? 'User'}!',
+                            'Welcome, $displayName!',
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 20),
                           ),

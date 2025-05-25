@@ -136,8 +136,8 @@ class _StudyScreenState extends State<StudyScreen> {
 
     if (showFeedback) {
       feedback = determinedIsCorrect 
-        ? FeedbackGenerator.getPositiveFeedback() 
-        : FeedbackGenerator.getNegativeFeedback();
+        ? FeedbackGenerator.getPositiveFeedback(context) 
+        : FeedbackGenerator.getNegativeFeedback(context);
     } else {
       feedback = determinedIsCorrect ? "Correct" : "Incorrect";
     }

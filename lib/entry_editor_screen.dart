@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // NEW: Import for localization
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'l10n/app_localizations.dart';
 
 class EntryEditorScreen extends StatefulWidget {
   final List<Map<String, String>> initialEntries;
