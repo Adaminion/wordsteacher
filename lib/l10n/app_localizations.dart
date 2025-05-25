@@ -98,233 +98,53 @@ abstract class AppLocalizations {
     Locale('no'),
   ];
 
-  /// No description provided for @appTitle.
+  /// The title of the application
   ///
   /// In en, this message translates to:
   /// **'Memorly'**
   String get appTitle;
 
-  /// No description provided for @forget.
+  /// Error message when question or answer is empty
   ///
   /// In en, this message translates to:
-  /// **'Forget'**
-  String get forget;
+  /// **'Question and answer cannot be empty'**
+  String get questionAndAnswerCannotBeEmpty;
 
-  /// No description provided for @edit.
+  /// Title for delete entry dialog
   ///
   /// In en, this message translates to:
-  /// **'Edit'**
-  String get edit;
+  /// **'Delete Entry'**
+  String get deleteEntryTitle;
 
-  /// No description provided for @test.
+  /// Confirmation message for deleting an entry
   ///
   /// In en, this message translates to:
-  /// **'Test'**
-  String get test;
+  /// **'Are you sure you want to delete this entry?'**
+  String deleteEntryConfirm(Object question);
 
-  /// No description provided for @cloud.
+  /// Delete button text
   ///
   /// In en, this message translates to:
-  /// **'Cloud'**
-  String get cloud;
+  /// **'Delete'**
+  String get delete;
 
-  /// No description provided for @drill.
+  /// Message asking if user wants to discard changes
   ///
   /// In en, this message translates to:
-  /// **'Drill'**
-  String get drill;
+  /// **'Are you sure you want to discard your changes?'**
+  String get discardChangesMessage;
 
-  /// No description provided for @options.
+  /// Button to stay on current screen
   ///
   /// In en, this message translates to:
-  /// **'Options'**
-  String get options;
+  /// **'Stay'**
+  String get stay;
 
-  /// No description provided for @help.
+  /// Button to discard changes and go back
   ///
   /// In en, this message translates to:
-  /// **'Help'**
-  String get help;
-
-  /// No description provided for @loggedOutSuccessfully.
-  ///
-  /// In en, this message translates to:
-  /// **'Logged out successfully'**
-  String get loggedOutSuccessfully;
-
-  /// No description provided for @mustBeLoggedInToSave.
-  ///
-  /// In en, this message translates to:
-  /// **'You must be logged in to save a new sheet.'**
-  String get mustBeLoggedInToSave;
-
-  /// No description provided for @loginRequiredToDelete.
-  ///
-  /// In en, this message translates to:
-  /// **'Login required to delete sheets.'**
-  String get loginRequiredToDelete;
-
-  /// No description provided for @loginRequiredToRename.
-  ///
-  /// In en, this message translates to:
-  /// **'Login required to rename sheets.'**
-  String get loginRequiredToRename;
-
-  /// No description provided for @loginRequiredToLoad.
-  ///
-  /// In en, this message translates to:
-  /// **'Login required to load your sheets.'**
-  String get loginRequiredToLoad;
-
-  /// No description provided for @noEntriesToCopy.
-  ///
-  /// In en, this message translates to:
-  /// **'No entries to copy.'**
-  String get noEntriesToCopy;
-
-  /// No description provided for @commasDetectedInEntries.
-  ///
-  /// In en, this message translates to:
-  /// **'Commas Detected in Entries'**
-  String get commasDetectedInEntries;
-
-  /// No description provided for @commasDetectedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Your entries contain commas. How would you like to format the text for the clipboard?'**
-  String get commasDetectedMessage;
-
-  /// No description provided for @lineByLineFormat.
-  ///
-  /// In en, this message translates to:
-  /// **'Line by Line (Q then A)'**
-  String get lineByLineFormat;
-
-  /// No description provided for @removeCommasFormat.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove Commas (Q,A)'**
-  String get removeCommasFormat;
-
-  /// No description provided for @cancel.
-  ///
-  /// In en, this message translates to:
-  /// **'Cancel'**
-  String get cancel;
-
-  /// No description provided for @copyOperationCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Copy operation cancelled.'**
-  String get copyOperationCancelled;
-
-  /// No description provided for @copiedEntriesToClipboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Copied {count} entries to clipboard'**
-  String copiedEntriesToClipboard(int count);
-
-  /// No description provided for @nothingCopiedToClipboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Nothing was copied to clipboard.'**
-  String get nothingCopiedToClipboard;
-
-  /// No description provided for @unsavedChanges.
-  ///
-  /// In en, this message translates to:
-  /// **'Unsaved Changes'**
-  String get unsavedChanges;
-
-  /// No description provided for @unsavedChangesNewFileMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You have unsaved changes. Proceeding will clear them. Continue?'**
-  String get unsavedChangesNewFileMessage;
-
-  /// No description provided for @no.
-  ///
-  /// In en, this message translates to:
-  /// **'No'**
-  String get no;
-
-  /// No description provided for @yes.
-  ///
-  /// In en, this message translates to:
-  /// **'Yes'**
-  String get yes;
-
-  /// No description provided for @memoryClearedMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Memory cleared. Ready for new entries.'**
-  String get memoryClearedMessage;
-
-  /// No description provided for @clipboardIsEmpty.
-  ///
-  /// In en, this message translates to:
-  /// **'Clipboard is empty'**
-  String get clipboardIsEmpty;
-
-  /// No description provided for @clipboardNoProcessableContent.
-  ///
-  /// In en, this message translates to:
-  /// **'Clipboard contains no processable content.'**
-  String get clipboardNoProcessableContent;
-
-  /// No description provided for @pasteFromClipboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste from Clipboard'**
-  String get pasteFromClipboard;
-
-  /// No description provided for @pasteReplaceOrAppendMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Do you want to replace existing entries or append to them?'**
-  String get pasteReplaceOrAppendMessage;
-
-  /// No description provided for @append.
-  ///
-  /// In en, this message translates to:
-  /// **'Append'**
-  String get append;
-
-  /// No description provided for @replace.
-  ///
-  /// In en, this message translates to:
-  /// **'Replace'**
-  String get replace;
-
-  /// No description provided for @pasteOperationCancelled.
-  ///
-  /// In en, this message translates to:
-  /// **'Paste operation cancelled.'**
-  String get pasteOperationCancelled;
-
-  /// No description provided for @noValidQAPairsFound.
-  ///
-  /// In en, this message translates to:
-  /// **'No valid Q&A pairs found in clipboard using detected format.'**
-  String get noValidQAPairsFound;
-
-  /// No description provided for @errorPastingFromClipboard.
-  ///
-  /// In en, this message translates to:
-  /// **'Error pasting from clipboard: {error}'**
-  String errorPastingFromClipboard(String error);
-
-  /// No description provided for @unsavedChangesTestFileMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'You have unsaved changes. Generating a test file will clear them. Proceed?'**
-  String get unsavedChangesTestFileMessage;
-
-  /// No description provided for @generatedTestEntriesMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Generated 30 new test entries. Click \"Add/Edit Entries\" to view.'**
-  String get generatedTestEntriesMessage;
+  /// **'Discard and Go Back'**
+  String get discardAndGoBack;
 }
 
 class _AppLocalizationsDelegate

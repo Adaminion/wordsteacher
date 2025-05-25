@@ -40,7 +40,7 @@ Future<void> _loadCredentials() async {
     if (remember == 'true') {
       final email = await storage.read(key: 'email');
       final password = await storage.read(key: 'password');
-      final displayName = await storage.read(key: 'displayName');
+      //final displayName = await storage.read(key: 'displayName');
       if (email != null) _emailController.text = email;
       if (password != null) _passwordController.text = password;
       setState(() {
@@ -151,8 +151,8 @@ Widget build(BuildContext context) {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            //'Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? 'User'}!',
-                            'Welcome, $displayName!',
+                            'Welcome, ${FirebaseAuth.instance.currentUser?.displayName ?? 'User'}!',
+                        
                             style: TextStyle(
                                 fontWeight: FontWeight.bold, fontSize: 20),
                           ),

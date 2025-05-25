@@ -278,7 +278,7 @@ class _MemorlyHomeState extends State<MemorlyHome> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => AuthScreen()),
+                      MaterialPageRoute(builder: (_) => const AuthScreen()),
                     );
                   },
                 );

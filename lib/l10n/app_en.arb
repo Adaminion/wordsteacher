@@ -1,53 +1,35 @@
 {
   "@@locale": "en",
   "appTitle": "Memorly",
-  "forget": "Forget",
-  "edit": "Edit",
-  "test": "Test",
-  "cloud": "Cloud",
-  "drill": "Drill",
-  "options": "Options",
-  "help": "Help",
-  "question": "Question",
-  "answer": "Answer",
-  "save": "Save",
-  "cancel": "Cancel",
+  "@appTitle": {
+    "description": "The title of the application"
+  },
+  "questionAndAnswerCannotBeEmpty": "Question and answer cannot be empty",
+  "@questionAndAnswerCannotBeEmpty": {
+    "description": "Error message when question or answer is empty"
+  },
+  "deleteEntryTitle": "Delete Entry",
+  "@deleteEntryTitle": {
+    "description": "Title for delete entry dialog"
+  },
+  "deleteEntryConfirm": "Are you sure you want to delete this entry?",
+  "@deleteEntryConfirm": {
+    "description": "Confirmation message for deleting an entry"
+  },
   "delete": "Delete",
-  "addNewEntry": "Add entry",
-  "editEntry": "Edit entry",
-  "questionAndAnswerCannotBeEmpty": "Question/answer required",
-  "deleteEntryTitle": "Delete?",
-  "deleteEntryConfirm": "Delete?",
-  "unsavedChanges": "Unsaved changes",
-  "discardChangesMessage": "Discard changes and go back?",
+  "@delete": {
+    "description": "Delete button text"
+  },
+  "discardChangesMessage": "Are you sure you want to discard your changes?",
+  "@discardChangesMessage": {
+    "description": "Message asking if user wants to discard changes"
+  },
   "stay": "Stay",
-  "discardAndGoBack": "Discard & return",
-  "loggedOutSuccessfully": "Logged out",
-  "mustBeLoggedInToSave": "Login to save sheet",
-  "loginRequiredToDelete": "Login to delete sheets",
-  "loginRequiredToRename": "Login to rename sheets",
-  "loginRequiredToLoad": "Login to load sheets",
-  "noEntriesToCopy": "No entries to copy",
-  "commasDetectedInEntries": "Commas detected",
-  "commasDetectedMessage": "Entries contain commas. Choose format:",
-  "lineByLineFormat": "Line by line (Q→A)",
-  "removeCommasFormat": "Remove commas (Q,A)",
-  "copyOperationCancelled": "Copy cancelled",
-  "copiedEntriesToClipboard": "Copied {count} entries",
-  "nothingCopiedToClipboard": "Nothing copied",
-  "unsavedChangesNewFileMessage": "Unsaved changes will be lost. Continue?",
-  "no": "No",
-  "yes": "Yes",
-  "memoryClearedMessage": "Memory cleared",
-  "clipboardIsEmpty": "Clipboard empty",
-  "clipboardNoProcessableContent": "No clipboard content",
-  "pasteFromClipboard": "Paste",
-  "pasteReplaceOrAppendMessage": "Replace existing or append?",
-  "append": "Append",
-  "replace": "Replace",
-  "pasteOperationCancelled": "Paste cancelled",
-  "noValidQAPairsFound": "No valid fact sheets found",
-  "errorPastingFromClipboard": "Paste error: {error}",
-  "unsavedChangesTestFileMessage": "Unsaved changes will be lost. Generate test file?",
-  "generatedTestEntriesMessage": "30 test entries generated. Click “Add/Edit entries”."
+  "@stay": {
+    "description": "Button to stay on current screen"
+  },
+  "discardAndGoBack": "Discard and Go Back",
+  "@discardAndGoBack": {
+    "description": "Button to discard changes and go back"
+  }
 }
